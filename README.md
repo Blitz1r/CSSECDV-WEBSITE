@@ -1,3 +1,4 @@
-# Inverntory System Site
+# Inverntory System MERN Site
 
-## A CSSWENG PROJECT FOR CSSECDV
+A CSSWENG PROJECT FOR CSSECDV
+
