@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const session = require('express-session');
 const cors = require('cors');
 const workoutRoutes = require('./routes/workouts.js');
 const loginRoutes = require('./routes/login.js');  // Import login route
@@ -12,8 +13,22 @@ const categoryRoutes = require('./routes/category');
 const app = express();
 
 // middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_ORIGIN, 
+    credentials: true // Allow credentials (cookies)
+}));
 app.use(express.json());
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: false, // Set to true if using HTTPS
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
 
 app.use((req, res, next) => {
     console.log(`Received request: ${req.method} ${req.path}`);

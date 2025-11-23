@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/sidebar.css';
 
 const Sidebar = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(true);
+    const navigate = useNavigate();
 
     const toggleSidebar = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
@@ -20,6 +21,34 @@ const Sidebar = () => {
     
         if (isSidebarCollapsed) {
             setSidebarCollapsed(false);
+        }
+    };
+
+        const handleLogout = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/login/logout', {
+                method: 'POST',
+                credentials: 'include', // Important for sending cookies
+            });
+
+            if (response.ok) {
+                // Clear localStorage
+                localStorage.removeItem('auth');
+                localStorage.removeItem('userEmail'); // Clear any other user data if stored
+                
+                // Redirect to login
+                navigate('/');
+            } else {
+                console.error('Logout failed');
+                // Still clear local data and redirect
+                localStorage.removeItem('auth');
+                navigate('/');
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Still clear local data and redirect on error
+            localStorage.removeItem('auth');
+            navigate('/');
         }
     };
 
@@ -87,10 +116,10 @@ const Sidebar = () => {
                     </a>
                 </li>
                 <li className="logout-item">
-                    <Link to="/" title="Logout">
+                    <a href="#" onClick={handleLogout} title="Logout">
                         <span className="icon">🚪</span>
                         <span className="text">Logout</span>
-                    </Link>
+                    </a>
                 </li>
             </ul>
         </nav>

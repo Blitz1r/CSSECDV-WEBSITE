@@ -9,11 +9,21 @@ const config = {
 axios.defaults.baseURL = config.API_URL;
 axios.defaults.timeout = 10000; // 10 second timeout
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.withCredentials = true; // include cookies for session-based auth
 
 // Add interceptor for error handling
 axios.interceptors.response.use(
     response => response,
     error => {
+        if (error?.response?.status === 401) {
+            // Not authenticated — bounce to login
+            try {
+                localStorage.removeItem('auth');
+            } catch {}
+            if (window.location.pathname !== '/') {
+                window.location.replace('/');
+            }
+        }
         console.error('Axios Error:', error);
         return Promise.reject(error);
     }

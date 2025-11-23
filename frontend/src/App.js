@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/login';
 import Dashboard from './components/dashboard';
 import Inventory from './components/inventory';
@@ -21,19 +21,24 @@ function App() {
         }
     }, []);
 
+    const RequireAuth = ({ children }) => {
+        const authed = typeof window !== 'undefined' && localStorage.getItem('auth') === 'true';
+        return authed ? children : <Navigate to="/" replace />;
+    };
+
     return (
         <Router>
             <ErrorBoundary>
                 <Routes>
                     <Route path="/" element={<Login />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/inventory" element={<Inventory />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/categories" element={<Categories />} />
-                    <Route path="/orders/view" element={<ViewOrders />} />
-                    <Route path="/orders/pending" element={<PendingOrders />} />
-                    <Route path="/reports/sales" element={<SalesReports />} />
-                    <Route path="/reports/inventory" element={<InventoryReports />} />
+                    <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+                    <Route path="/inventory" element={<RequireAuth><Inventory /></RequireAuth>} />
+                    <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+                    <Route path="/categories" element={<RequireAuth><Categories /></RequireAuth>} />
+                    <Route path="/orders/view" element={<RequireAuth><ViewOrders /></RequireAuth>} />
+                    <Route path="/orders/pending" element={<RequireAuth><PendingOrders /></RequireAuth>} />
+                    <Route path="/reports/sales" element={<RequireAuth><SalesReports /></RequireAuth>} />
+                    <Route path="/reports/inventory" element={<RequireAuth><InventoryReports /></RequireAuth>} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                 </Routes>
             </ErrorBoundary>

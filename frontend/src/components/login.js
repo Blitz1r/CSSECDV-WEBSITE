@@ -26,6 +26,7 @@ const Login = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // include cookies for session
                 body: JSON.stringify({ email, password }),
             });
 
@@ -34,6 +35,10 @@ const Login = () => {
 
             if (response.ok && data.success) {
                 setSuccess(true); // Show success message
+                try {
+                    localStorage.setItem('auth', 'true');
+                    localStorage.setItem('email', data?.user?.email || email);
+                } catch {}
                 navigate('/dashboard'); // Redirect on success
             } else {
                 setError(true); // Show error if login fails
