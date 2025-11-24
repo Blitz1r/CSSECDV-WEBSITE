@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/UserModel');
+const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
 
 // POST /api/login
 const loginUser = async (req, res) => {
@@ -56,6 +57,10 @@ const resetPassword = async (req, res) => {
         return res.status(400).json({ message: 'Email and password are required' });
     }
     try {
+        const policy = validatePassword(password);
+        if (!policy.valid) {
+            return res.status(400).json({ message: policy.errors.join('\n'), policy: describePolicy() });
+        }
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: 'No account found with that email' });

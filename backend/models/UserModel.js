@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const { validatePassword } = require('../utils/passwordPolicy');
 
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -15,6 +16,10 @@ const userSchema = new mongoose.Schema({
 // Hash password if modified and not already hashed
 userSchema.pre('save', async function (next) {
     if (this.isModified('password') && !this.password.startsWith('$2')) {
+        const check = validatePassword(this.password);
+        if (!check.valid) {
+            return next(new Error(check.errors.join('; ')));
+        }
         try {
             this.password = await bcrypt.hash(this.password, 10);
         } catch (err) {

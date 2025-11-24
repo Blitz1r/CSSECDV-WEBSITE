@@ -37,9 +37,22 @@ const ForgotPassword = () => {
             return;
         }
 
-        if (password.length < 6) {
+        // Client-side policy hint (server is source of truth)
+        const minLen = Number(process.env.REACT_APP_PASSWORD_MIN_LENGTH) || 12;
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasDigit = /[0-9]/.test(password);
+        const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password);
+        const hasSpace = /\s/.test(password);
+        if (password.length < minLen) {
             setError(true);
-            setErrorMessage('Password must be at least 6 characters long');
+            setErrorMessage(`Password must be ${minLen}+ chars long.`);
+            setLoading(false);
+            return;
+        }
+        if (password.length < minLen || !hasUpper || !hasLower || !hasDigit || !hasSpecial || hasSpace) {
+            setError(true);
+            setErrorMessage(`Password must include uppercase, lowercase, digit, special, and no spaces.`);
             setLoading(false);
             return;
         }
