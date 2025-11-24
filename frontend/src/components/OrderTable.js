@@ -1,6 +1,6 @@
 import React from 'react';
 import config from '../config';
-
+import { formatCurrency } from '../utils/currency';
 const OrderTable = ({ orders, onDelete }) => {
   const handleDelete = async (orderId) => {
     try {
@@ -38,7 +38,7 @@ const OrderTable = ({ orders, onDelete }) => {
             <td>{order.orderID}</td>
             <td>{order.itemName}</td>
             <td>{order.status}</td>
-            <td>${order.price}</td>
+            <td>{formatCurrency(order.price)}</td>
             <td>{new Date(order.date).toLocaleDateString()}</td>
             <td>
               <button 

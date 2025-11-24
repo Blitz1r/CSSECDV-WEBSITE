@@ -28,15 +28,12 @@ const addItem = async (req, res) => {
         });
 
         await newItem.save();
-
+        
+        await Transaction.create({
+                    name: itemName,
+                    action: "was added."
+                });
         // Create a transaction record
-        const transaction = new Transaction({
-            description: `Added new item: ${itemName}`,
-            type: 'CREATE',
-            itemId: newItem._id,
-            details: { itemName, category, status, price, quantity }
-        });
-        await transaction.save();
 
         res.status(201).json({ message: 'Item added successfully', newItem });
     } catch (error) {
@@ -72,13 +69,10 @@ const updateItem = async (req, res) => {
 
         // Create a transaction record
         const transaction = new Transaction({
-            description: `Updated item: ${itemName}`,
-            type: 'UPDATE',
-            itemId: id,
-            details: { itemName, category, status, price, quantity }
+            name: itemName,
+            action: `was updated.`
         });
         await transaction.save();
-
         res.status(200).json({ message: 'Item updated successfully', updatedItem });
     } catch (error) {
         console.error('Error updating item:', error);
@@ -99,10 +93,8 @@ const deleteItem = async (req, res) => {
 
         // Create a transaction record
         const transaction = new Transaction({
-            description: `Deleted item: ${deletedItem.itemName}`,
-            type: 'DELETE',
-            itemId: id,
-            details: { itemName: deletedItem.itemName }
+            name: deletedItem.itemName,
+            action: 'was deleted.'
         });
         await transaction.save();
 
@@ -142,10 +134,8 @@ const incrementItem = async (req, res) => {
 
         // Create a transaction record
         const transaction = new Transaction({
-            description: `Incremented quantity for: ${item.itemName}`,
-            type: 'UPDATE',
-            itemId: id,
-            details: { itemName: item.itemName, quantity: newQuantity }
+            name: item.itemName,
+            action: 'was incremented by 1.'
         });
         await transaction.save();
 
@@ -194,10 +184,8 @@ const decrementItem = async (req, res) => {
 
         // Create a transaction record
         const transaction = new Transaction({
-            description: `Decremented quantity for: ${item.itemName}`,
-            type: 'UPDATE',
-            itemId: id,
-            details: { itemName: item.itemName, quantity: newQuantity }
+            name: item.itemName,
+            action: 'was decremented by 1.'
         });
         await transaction.save();
 

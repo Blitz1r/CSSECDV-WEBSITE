@@ -1,72 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import '../styles/orders.css';
 import Sidebar from './Sidebar';
 import OrderTable from './OrderTable';
 import OrderForm from './OrderForm';
 import config from '../config';
-
+import {formatCurrency} from '../utils/currency';
 const ViewOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [totalPages, setTotalPages] = useState(1);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [ordersPerPage, setOrdersPerPage] = useState(10);
-
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await fetch(`${config.API_URL}/api/orders`, { credentials: 'include' });
-                if (!response.ok) {
-                    console.error('Failed to fetch orders. Status:', response.status);
-                    setOrders([]);
-                    setLoading(false);
-                    return;
-                }
-                const data = await response.json();
-                setOrders(Array.isArray(data) ? data : []);
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching orders:', error);
-                setLoading(false);
-            }
-        };
-        fetchOrders();
+    // fetchOrders is now reusable
+    const fetchOrders = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${config.API_URL}/api/orders`);
+            const data = await response.json();
+            setOrders(data);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
+
     const handleOrderSubmit = async (newOrder) => {
-        try {
-            const response = await fetch(`${config.API_URL}/api/orders/add`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(newOrder)
-            });
-            if (!response.ok) {
-                console.error('Failed to create order. Status:', response.status);
-                return;
-            }
-            const created = await response.json();
-            setOrders([...orders, created]);
-        } catch (error) {
-            console.error('Error creating order:', error);
-        }
+        await fetchOrders();
     };
 
     const handleOrderDelete = async (orderId) => {
         try {
+            console.log('Deleting orderId:', orderId);
+            setOrders(prev => prev.filter(order => (order._id || order.orderID) !== orderId));
+
             const response = await fetch(`${config.API_URL}/api/orders/delete/${orderId}`, {
-                method: 'DELETE',
-                credentials: 'include'
+                method: 'DELETE'
             });
+
+            console.log('Delete response status:', response.status);
+
             if (response.ok) {
-                setOrders(orders.filter(order => order._id !== orderId));
+                // Re-fetch authoritative list to ensure UI matches backend
+                await fetchOrders();
             } else {
-                console.error('Failed to delete order. Status:', response.status);
+                // if delete failed, refetch to restore state and show error
+                console.error('Failed to delete order, status:', response.status);
+                await fetchOrders();
             }
         } catch (error) {
             console.error('Error deleting order:', error);
+            // revert / re-sync
+            await fetchOrders();
         }
     };
 
@@ -84,8 +71,7 @@ const ViewOrders = () => {
                     ) : (
                         <>
                             <OrderForm onSubmit={handleOrderSubmit} />
-                            <OrderTable orders={orders} onDelete={handleOrderDelete} />
-                            {/* Pagination buttons */}
+                            <OrderTable orders={orders} onDelete={handleOrderDelete} formatCurrency={formatCurrency} />
                         </>
                     )}
                 </div>

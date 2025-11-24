@@ -10,7 +10,9 @@ const userSchema = new mongoose.Schema({
         enum: ['Administrator', 'Manager', 'Guest'], 
         default: 'Guest', 
         required: true 
-    }
+    },
+    securityQuestion: {type: String, required: true},
+    securityAnswer: {type: String, required: true}
 }, { timestamps: true });
 
 // Hash password if modified and not already hashed

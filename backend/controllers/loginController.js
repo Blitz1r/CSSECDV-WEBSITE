@@ -101,4 +101,35 @@ const sessionInfo = (req, res) => {
     });
 };
 
-module.exports = { loginUser, resetPassword, logoutUser, sessionInfo };
+const verifySecurityAnswer = async (req, res) => {
+    const { email, answer } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.securityAnswer.toLowerCase() === answer.toLowerCase()) {
+            res.status(200).json({
+                success: true,
+                message: 'Security answer verified',
+                user: { email: user.email, role: user.role }
+            });
+        } else {
+            res.status(401).json({ message: 'Incorrect security answer' });
+        }
+    } catch (error) {
+        console.error('Security verification error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+module.exports = { 
+    loginUser,
+    resetPassword,
+    logoutUser,
+    sessionInfo,
+    verifySecurityAnswer
+};

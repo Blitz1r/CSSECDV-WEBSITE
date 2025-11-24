@@ -102,7 +102,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.login-form a.forgot-password {
+.login-form a.forgot-password, .login-form a.create-account {
     display: block;
     margin-top: 1.5em;
     color: var(--primary-color);
@@ -110,7 +110,7 @@
     transition: color 0.3s ease;
 }
 
-.login-form a.forgot-password:hover {
+.login-form a.forgot-password:hover, .login-form a.create-account:hover {
     color: var(--secondary-color);
 }
 

@@ -12,7 +12,7 @@ import Categories from './components/Categories';
 import ForgotPassword from './components/ForgotPassword';
 import Settings from './components/Settings';
 import ErrorBoundary from './components/ErrorBoundary';
-
+import VerifySecurityQuestion from './components/VerifySecurityQuestion';
 function App() {
     useEffect(() => {
         const darkMode = localStorage.getItem('darkMode');
@@ -35,6 +35,7 @@ function App() {
                     <Route path="/reports/sales" element={<ProtectedRoute><SalesReports /></ProtectedRoute>} />
                     <Route path="/reports/inventory" element={<ProtectedRoute><InventoryReports /></ProtectedRoute>} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/verify-security" element={<VerifySecurityQuestion />} />
                 </Routes>
             </ErrorBoundary>
         </Router>

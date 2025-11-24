@@ -76,3 +76,22 @@ body.dark-mode textarea::placeholder {
 .contact-info {
   margin-top: 1.5em;
 }
+.flex-row {
+  display:flex;
+  flex-direction: row;
+  gap: 1em;
+}
+.flex-column {
+  display:flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.centered {
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}
+.space-between {
+  justify-content: space-between;
+  width: 100%;
+}

@@ -44,7 +44,13 @@ const Login = () => {
                     // Notify App to re-check session
                     window.dispatchEvent(new Event('auth-changed'));
                 } catch {}
-                navigate('/dashboard'); // Redirect on success
+                navigate('/verify-security', { 
+                    state: { 
+                        email: data.email, 
+                        securityQuestion: data.securityQuestion,
+                        nextAction: 'login' 
+                    } 
+                }); // Redirect on success
             } else {
                 setError(true); // Show error if login fails
             }
