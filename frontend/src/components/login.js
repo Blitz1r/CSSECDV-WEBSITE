@@ -38,6 +38,11 @@ const Login = () => {
                 try {
                     localStorage.setItem('auth', 'true');
                     localStorage.setItem('email', data?.user?.email || email);
+                    if (data?.user?.role) {
+                        localStorage.setItem('role', data.user.role);
+                    }
+                    // Notify App to re-check session
+                    window.dispatchEvent(new Event('auth-changed'));
                 } catch {}
                 navigate('/dashboard'); // Redirect on success
             } else {

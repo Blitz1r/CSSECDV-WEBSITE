@@ -1,4 +1,5 @@
 const express = require('express')
+const { requireAuth } = require('../middleware/auth');
 
 const {
     createWorkout,
@@ -12,19 +13,13 @@ const Workout = require('../models/workoutModel')
 
 const router = express.Router()
 
-// GET all workouts
+// Protect all workout routes
+router.use(requireAuth);
+
 router.get('/', getWorkouts)
-
-// GET a single workout
 router.get('/:id', getAWorkout)
-
-// POST a new workout
 router.post('/', createWorkout)
-
-// DELETE a workout
 router.delete('/:id', deleteWorkout)
-
-// UPDATE a workout
 router.patch('/:id', updateWorkout)
 
 

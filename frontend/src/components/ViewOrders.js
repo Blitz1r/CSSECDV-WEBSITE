@@ -17,44 +17,53 @@ const ViewOrders = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await fetch(`${config.API_URL}/api/orders`);
+                const response = await fetch(`${config.API_URL}/api/orders`, { credentials: 'include' });
+                if (!response.ok) {
+                    console.error('Failed to fetch orders. Status:', response.status);
+                    setOrders([]);
+                    setLoading(false);
+                    return;
+                }
                 const data = await response.json();
-                setOrders(data);
+                setOrders(Array.isArray(data) ? data : []);
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching orders:', error);
                 setLoading(false);
             }
         };
-        
         fetchOrders();
     }, []);
 
     const handleOrderSubmit = async (newOrder) => {
         try {
-            const response = await fetch(`${config.API_URL}/api/orders`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(newOrder),
+            const response = await fetch(`${config.API_URL}/api/orders/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(newOrder)
             });
-            const data = await response.json();
-            setOrders([...orders, data]);
+            if (!response.ok) {
+                console.error('Failed to create order. Status:', response.status);
+                return;
+            }
+            const created = await response.json();
+            setOrders([...orders, created]);
         } catch (error) {
             console.error('Error creating order:', error);
-    }
+        }
     };
 
     const handleOrderDelete = async (orderId) => {
         try {
             const response = await fetch(`${config.API_URL}/api/orders/delete/${orderId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             });
-            
             if (response.ok) {
-                // Remove the deleted order from state
                 setOrders(orders.filter(order => order._id !== orderId));
+            } else {
+                console.error('Failed to delete order. Status:', response.status);
             }
         } catch (error) {
             console.error('Error deleting order:', error);

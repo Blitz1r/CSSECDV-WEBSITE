@@ -4,17 +4,10 @@ const Transaction = require('../models/TransactionModel');
 // Controller function to handle adding an order
 const addOrderHandler = async (req, res) => {
     const { orderID, itemName, status, price, date } = req.body;
-
     try {
-        // Call the addOrder function
-        await addOrder(orderID, itemName, status, price, date);
-
-        await Transaction.create({
-            name: itemName,
-            action: "was ordered.",
-        });
-
-        res.status(201).json({ message: 'Order added successfully' });
+        const createdOrder = await Order.create({ orderID, itemName, status, price, date });
+        await Transaction.create({ name: itemName, action: 'was ordered.' });
+        res.status(201).json(createdOrder);
     } catch (error) {
         res.status(500).json({ message: 'Error adding order' });
     }

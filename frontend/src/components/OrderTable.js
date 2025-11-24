@@ -6,9 +6,8 @@ const OrderTable = ({ orders, onDelete }) => {
     try {
       const response = await fetch(`${config.API_URL}/api/orders/delete/${orderId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -34,7 +33,7 @@ const OrderTable = ({ orders, onDelete }) => {
         </tr>
       </thead>
       <tbody>
-        {orders.map(order => (
+        {(Array.isArray(orders) ? orders : []).map(order => (
           <tr key={order._id}>
             <td>{order.orderID}</td>
             <td>{order.itemName}</td>

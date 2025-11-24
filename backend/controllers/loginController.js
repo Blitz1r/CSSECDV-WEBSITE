@@ -31,11 +31,18 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
-        // Set session attributes
+        // Ensure role exists (backfill legacy users without role)
+        if (!user.role) {
+            user.role = 'Guest';
+            await user.save();
+        }
+
+        // Set session attributes including role
         req.session.userId = user._id.toString();
         req.session.email = user.email;
+        req.session.role = user.role;
 
-        return res.json({ success: true, user: { email: user.email } });
+        return res.json({ success: true, user: { email: user.email, role: user.role } });
     } catch (error) {
         console.error('Error during login:', error);
         return res.status(500).json({ success: false, message: 'Server error' });
@@ -75,4 +82,18 @@ const logoutUser = (req, res) => {
     });
 };
 
-module.exports = { loginUser, resetPassword, logoutUser };
+// GET /api/login/session - return current authenticated session info
+const sessionInfo = (req, res) => {
+    if (!req.session || !req.session.userId) {
+        return res.status(401).json({ authenticated: false });
+    }
+    return res.json({
+        authenticated: true,
+        user: {
+            email: req.session.email,
+            role: req.session.role || 'Guest'
+        }
+    });
+};
+
+module.exports = { loginUser, resetPassword, logoutUser, sessionInfo };

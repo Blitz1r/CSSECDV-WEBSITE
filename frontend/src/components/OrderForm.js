@@ -23,14 +23,14 @@ const OrderForm = ({ onSubmit }) => {
     try {
       const response = await fetch(`${config.API_URL}/api/orders/add`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(orderData)
       });
 
       if (response.ok) {
-        onSubmit(orderData); // Update parent component
+        const created = await response.json();
+        onSubmit(created); // Update parent component with DB version
         // Reset form
         setOrderData({
           orderID: Date.now(),

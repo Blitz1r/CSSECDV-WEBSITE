@@ -1,7 +1,10 @@
-// routes/items.js
+// routes/category.js
 const express = require('express');
 const { addCategory, removeCategory, getCategories } = require('../controllers/categoryController.js');
+const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
+
+router.use(requireAuth);
 
 // Route to add a new item
 router.post('/add', addCategory);

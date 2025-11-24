@@ -35,7 +35,7 @@ const Sidebar = () => {
                 // Clear localStorage
                 localStorage.removeItem('auth');
                 localStorage.removeItem('userEmail'); // Clear any other user data if stored
-                
+                localStorage.removeItem('role');
                 // Redirect to login
                 navigate('/');
             } else {
