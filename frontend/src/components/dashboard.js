@@ -16,7 +16,7 @@ const Dashboard = () => {
         // Fetch recent activities
         const fetchRecentActivities = async () => {
             try {
-                const response = await fetch(`${config.API_URL}/api/transactions`);
+                const response = await fetch(`${config.API_URL}/api/transactions`, { credentials: 'include' });
                 const data = await response.json();
                 console.log('Received transactions:', data);
                 if (data.transactions) {
@@ -30,7 +30,7 @@ const Dashboard = () => {
         // Fetch inventory stats
         const fetchInventoryStats = async () => {
             try {
-                const response = await fetch(`${config.API_URL}/api/items`);
+                const response = await fetch(`${config.API_URL}/api/items`, { credentials: 'include' });
                 const items = await response.json();
                 
                 // Count total items
@@ -99,18 +99,21 @@ const Dashboard = () => {
                         <h3><span className="icon">📝</span>Recent Activities</h3> 
                         <ul>
                             {console.log('Current recentActivities:', recentActivities)}
-                            {recentActivities.length > 0 ? (
-                                recentActivities.map((activity, index) => (
-                                    <li key={activity._id || index}>
-                                        <div className="activity-item">
-                                            <span className="activity-type">{activity.type}</span>
-                                            <span className="activity-description">{activity.description}</span>
-                                            <span className="activity-time">
-                                                {new Date(activity.timestamp).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))
+                            {Array.isArray(recentActivities) && recentActivities.length > 0 ? (
+                                recentActivities.map((activity, index) => {
+                                    const type = activity.type || activity.action || '—';
+                                    const description = activity.description || activity.name || 'No description';
+                                    const time = activity.timestamp ? new Date(activity.timestamp).toLocaleDateString() : 'Unknown';
+                                    return (
+                                        <li key={activity._id || index}>
+                                            <div className="activity-item">
+                                                <span className="activity-type">{type}</span>
+                                                <span className="activity-description">{description}</span>
+                                                <span className="activity-time">{time}</span>
+                                            </div>
+                                        </li>
+                                    );
+                                })
                             ) : (
                                 <li>No recent activities</li>
                             )}
