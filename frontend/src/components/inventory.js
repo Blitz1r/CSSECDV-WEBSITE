@@ -365,6 +365,8 @@ const Inventory = () => {
                                     name="itemName"
                                     value={newItem.itemName}
                                     onChange={handleChange}
+                                    placeholder="Item Name"
+                                    minLength="3"
                                     required
                                 />
                             </div>
@@ -433,6 +435,9 @@ const Inventory = () => {
                                     name="description"
                                     value={newItem.description}
                                     onChange={handleChange}
+                                    placeholder="Description"
+                                    minLength="3"
+                                    required
                                 />
                             </div>
 
