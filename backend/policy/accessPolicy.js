@@ -43,6 +43,9 @@ const accessPolicy = {
     read: [Roles.ADMIN, Roles.MANAGER, Roles.GUEST],
     update: [Roles.ADMIN, Roles.MANAGER],
     delete: [Roles.ADMIN, Roles.MANAGER]
+  },
+  Transaction: {
+    read: [Roles.ADMIN, Roles.MANAGER, Roles.GUEST]
   }
 };
 

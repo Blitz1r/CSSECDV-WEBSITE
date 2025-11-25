@@ -1,8 +1,10 @@
 const Workout = require('../models/workoutModel')
 const mongoose = require('mongoose')
+const { enforceAction } = require('../middleware/authorization');
 
 // GET all workouts
 const getWorkouts = async (req, res) => {
+    if (!enforceAction(req, res, 'Workout', 'read')) return;
     const workouts = await Workout.find({}).sort({createdAt: -1})
 
     res.status(200).json(workouts)
@@ -10,6 +12,7 @@ const getWorkouts = async (req, res) => {
 
 // GET a single workout
 const getAWorkout = async (req, res) => {
+    if (!enforceAction(req, res, 'Workout', 'read')) return;
     const {id} = req.params
 
     if(!mongoose.Types.ObjectId.isValid(id)){
@@ -32,6 +35,7 @@ const createWorkout = async (req, res) => {
 
     // add doc to db
     try {
+        if (!enforceAction(req, res, 'Workout', 'create')) return;
         const workout = await Workout.create({title, load, reps})
         res.status(200).json(workout)
     } catch (error) {
@@ -42,6 +46,7 @@ const createWorkout = async (req, res) => {
 // DELETE a workout
 const deleteWorkout = async (req, res) => {
     const {id} = req.params
+    if (!enforceAction(req, res, 'Workout', 'delete')) return;
 
     if(!mongoose.Types.ObjectId.isValid(id)){
         return res.status(404).json({error: 'No such item exists.'})
@@ -59,6 +64,7 @@ const deleteWorkout = async (req, res) => {
 // UPDATE a workout
 const updateWorkout = async (req, res) => {
     const {id} = req.params
+    if (!enforceAction(req, res, 'Workout', 'update')) return;
 
     if(!mongoose.Types.ObjectId.isValid(id)){
         return res.status(404).json({error: 'No such item exists.'})
