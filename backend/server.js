@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const cors = require('cors');
+const crypto = require('crypto');
 const workoutRoutes = require('./routes/workouts.js');
 const loginRoutes = require('./routes/login.js');  // Import login route
 const orderRoutes = require('./routes/orders');
@@ -95,4 +96,21 @@ app.put('/api/items/update/:id', async (req, res) => {
 // start the server
 app.listen(5000, () => {
     console.log('Server is running on port 5000');
+});
+
+// Centralized error handler (after routes & server start call)
+const { addLog } = require('./controllers/loggerController');
+app.use(async (err, req, res, next) => {
+    const errorId = crypto.randomUUID();
+    // Log sanitized error (no stack in response)
+    await addLog({
+        eventType: 'error',
+        action: `Unhandled error: ${err.message}`,
+        level: 'ERROR',
+        userEmail: req.session?.email,
+        userId: req.session?.userId,
+        meta: { path: req.path, method: req.method, errorId }
+    });
+    if (res.headersSent) return next(err);
+    res.status(500).json({ success: false, message: 'An unexpected error occurred.', errorId });
 });

@@ -17,14 +17,17 @@ const ViewLogs = () => {
             setLoading(true);
             const response = await fetch(`${config.API_URL}/api/logs`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 credentials: 'include'
             });
+            if (!response.ok) {
+                console.error('Failed to fetch logs:', response.status);
+                setLogs([]);
+                return;
+            }
             const data = await response.json();
-            setLogs(data.transactions || []);
+            const logsPayload = Array.isArray(data.logs) ? data.logs : (Array.isArray(data.transactions) ? data.transactions : []);
+            setLogs(logsPayload);
         } catch (error) {
             console.error('Error fetching logs:', error);
         } finally {
@@ -49,18 +52,28 @@ const ViewLogs = () => {
                             <thead>
                                 <tr>
                                     <th>Email</th>
+                                    <th>Type</th>
                                     <th>Action</th>
+                                    <th>Level</th>
                                     <th>Timestamp</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {logs.map((log, index) => (
-                                    <tr key={index}>
-                                        <td>{log.Useremail}</td>
-                                        <td>{log.action}</td>
-                                        <td>{new Date(log.timestamp).toLocaleString()}</td>
-                                    </tr>
-                                ))}
+                                {logs.map((log, index) => {
+                                    const email = log.userEmail || log.Useremail || '';
+                                    const type = log.eventType || '';
+                                    const level = log.level || '';
+                                    const ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                                    return (
+                                        <tr key={index}>
+                                            <td>{email}</td>
+                                            <td>{type}</td>
+                                            <td>{log.action}</td>
+                                            <td>{level}</td>
+                                            <td>{ts}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}

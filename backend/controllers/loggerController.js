@@ -1,24 +1,23 @@
-const Logs = require('../models/LoggerModel');
+const Log = require('../models/LoggerModel');
 
-// Fetch recent transactions
+// GET /api/logs (admin only via route middleware)
 const getAllLogs = async (req, res) => {
     try {
-        const Logs = await Logs.find().sort({ timestamp: -1 });
-        res.status(200).json({ message: 'Recent transactions retrieved successfully', transactions });
+        const logs = await Log.find().sort({ timestamp: -1 }).limit(500); // cap output
+        res.status(200).json({ success: true, logs });
     } catch (error) {
-        res.status(500).json({ message: 'Error retrieving transactions' });
+        res.status(500).json({ success: false, message: 'Unable to retrieve logs' });
     }
 };
 
-const addLog = async (email, action) => {
+// Internal logging helper (non-route): accepts event details
+const addLog = async ({ eventType, action, level='INFO', userEmail, userId, meta }) => {
     try {
-        const newLog = new Logs({
-            Useremail: email,
-            action: action
-        });
-        await newLog.save();
+        await Log.create({ eventType, action, level, userEmail, userId, meta });
     } catch (error) {
-        console.error('Error adding log:', error);
+        // Avoid throwing further: silent fail with console output only
+        console.error('Log write failed:', error.message);
     }
-}
+};
+
 module.exports = { getAllLogs, addLog };
