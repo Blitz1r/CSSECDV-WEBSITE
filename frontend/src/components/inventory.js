@@ -407,6 +407,8 @@ const Inventory = () => {
                                     value={newItem.price}
                                     onChange={handleChange}
                                     required
+                                    min="0"
+                                    step="0.01"
                                 />
                             </div>
 
@@ -419,6 +421,7 @@ const Inventory = () => {
                                     value={newItem.quantity}
                                     onChange={handleChange}
                                     required
+                                    min="0"
                                 />
                             </div>
 

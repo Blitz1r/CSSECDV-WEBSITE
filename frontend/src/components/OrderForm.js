@@ -20,6 +20,13 @@ const OrderForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate price
+    if (parseFloat(orderData.price) < 0) {
+      alert('Price cannot be negative');
+      return;
+    }
+    
     try {
       const response = await fetch(`${config.API_URL}/api/orders/add`, {
         method: 'POST',
@@ -62,6 +69,8 @@ const OrderForm = ({ onSubmit }) => {
         onChange={handleChange}
         placeholder="Price"
         required
+        min="0"
+        step="0.01"
       />
       <select name="status" value={orderData.status} onChange={handleChange}>
         <option value="Pending">Pending</option>

@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
     orderID: { type: Number, required: true },
     itemName: { type: String, required: true },
     status: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: { type: Number, required: true, min: [0, 'Price cannot be negative'] },
     date: { type: Date, required: true },
 });
 
