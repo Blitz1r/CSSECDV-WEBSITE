@@ -1,11 +1,12 @@
 const { Order } = require('../models/OrderModel');
 const Transaction = require('../models/TransactionModel');
-const { guestFilterQuery, assertOwnershipOrElevated } = require('../middleware/authorization');
+const { guestFilterQuery, enforceAction } = require('../middleware/authorization');
 
 // Controller function to handle adding an order
 const addOrderHandler = async (req, res) => {
     const { orderID, itemName, status, price, date } = req.body;
     try {
+        if (!enforceAction(req, res, 'Order', 'create')) return;
         const createdOrder = await Order.create({ orderID, itemName, status, price, date, owner: req.session.userId });
         await Transaction.create({ name: itemName, action: 'was ordered.' });
         res.status(201).json(createdOrder);
@@ -32,7 +33,7 @@ const updateOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
-        if (!assertOwnershipOrElevated(req, res, order.owner, 'update order')) return;
+        if (!enforceAction(req, res, 'Order', 'update', order.owner)) return;
         if (orderID !== undefined) order.orderID = orderID;
         if (itemName !== undefined) order.itemName = itemName;
         if (status !== undefined) order.status = status;
@@ -55,7 +56,7 @@ const deleteOrder = async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        if (!assertOwnershipOrElevated(req, res, order.owner, 'delete order')) return;
+        if (!enforceAction(req, res, 'Order', 'delete', order.owner)) return;
 
         const deletedOrder = await Order.findByIdAndDelete(id);
 

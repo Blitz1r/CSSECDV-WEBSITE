@@ -1,7 +1,7 @@
 // controllers/itemController.js
 const Item = require('../models/ItemModel');
 const Transaction = require('../models/TransactionModel');
-const { guestFilterQuery, assertOwnershipOrElevated } = require('../middleware/authorization');
+const { guestFilterQuery, enforceAction } = require('../middleware/authorization');
 
 const LOW_STOCK_THRESHOLD = 10;
 const NO_STOCK_THRESHOLD = 0;
@@ -19,6 +19,7 @@ const addItem = async (req, res) => {
             status = 'Low Stock';
         }
 
+        if (!enforceAction(req, res, 'Item', 'create')) return;
         const newItem = new Item({
             itemName,
             category,
@@ -64,7 +65,7 @@ const updateItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        if (!assertOwnershipOrElevated(req, res, item.owner, 'update item')) return;
+        if (!enforceAction(req, res, 'Item', 'update', item.owner)) return;
 
         item.itemName = itemName;
         item.category = category;
@@ -97,7 +98,7 @@ const deleteItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        if (!assertOwnershipOrElevated(req, res, item.owner, 'delete item')) return;
+        if (!enforceAction(req, res, 'Item', 'delete', item.owner)) return;
 
         const deletedItem = await Item.findByIdAndDelete(id);
 
@@ -127,7 +128,7 @@ const incrementItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        if (!assertOwnershipOrElevated(req, res, item.owner, 'increment item')) return;
+        if (!enforceAction(req, res, 'Item', 'update', item.owner)) return; // treat quantity change as update
 
         const newQuantity = item.quantity + incrementAmount;
         let newStatus = 'In Stock';
@@ -175,7 +176,7 @@ const decrementItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        if (!assertOwnershipOrElevated(req, res, item.owner, 'decrement item')) return;
+        if (!enforceAction(req, res, 'Item', 'update', item.owner)) return; // treat quantity change as update
 
         if (item.quantity <= 0) {
             return res.status(400).json({ message: 'Cannot decrement. Quantity already at 0.' });
