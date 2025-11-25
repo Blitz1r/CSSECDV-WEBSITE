@@ -7,6 +7,7 @@ const orderSchema = new mongoose.Schema({
     status: { type: String, required: true },
     price: { type: Number, required: true, min: [0, 'Price cannot be negative'] },
     date: { type: Date, required: true },
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
 // Create the Order model

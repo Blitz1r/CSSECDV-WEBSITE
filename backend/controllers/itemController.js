@@ -24,7 +24,8 @@ const addItem = async (req, res) => {
             status,
             price,
             description,
-            quantity
+            quantity,
+            owner: req.session.userId
         });
 
         await newItem.save();
@@ -44,7 +45,9 @@ const addItem = async (req, res) => {
 // Get all items
 const getItems = async (req, res) => {
     try {
-        const items = await Item.find();
+        const role = (req.session.role || 'Guest');
+        const filter = role === 'Guest' ? { owner: req.session.userId } : {};
+        const items = await Item.find(filter);
         res.status(200).json(items);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching items', error });
@@ -57,15 +60,24 @@ const updateItem = async (req, res) => {
     const { itemName, category, status, price, description, quantity } = req.body;
 
     try {
-        const updatedItem = await Item.findByIdAndUpdate(
-            id,
-            { itemName, category, status, price, description, quantity },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedItem) {
+        const item = await Item.findById(id);
+        if (!item) {
             return res.status(404).json({ message: 'Item not found' });
         }
+
+        const role = (req.session.role || 'Guest');
+        const isOwner = item.owner && item.owner.toString() === req.session.userId;
+        if (role === 'Guest' && !isOwner) {
+            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
+        }
+
+        item.itemName = itemName;
+        item.category = category;
+        item.status = status;
+        item.price = price;
+        item.description = description;
+        item.quantity = quantity;
+        const updatedItem = await item.save();
 
         // Create a transaction record
         const transaction = new Transaction({
@@ -85,11 +97,20 @@ const deleteItem = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedItem = await Item.findByIdAndDelete(id);
-
-        if (!deletedItem) {
+        const item = await Item.findById(id);
+        if (!item) {
             return res.status(404).json({ message: 'Item not found' });
         }
+
+        const role = (req.session.role || 'Guest');
+        const isOwner = item.owner && item.owner.toString() === req.session.userId;
+        if (role === 'Guest' && !isOwner) {
+            return res.status(403).json({ message: 'Forbidden: cannot delete items you do not own' });
+        }
+
+        const deletedItem = await Item.findByIdAndDelete(id);
+
+        // deletedItem is defined if we reached here
 
         // Create a transaction record
         const transaction = new Transaction({
@@ -113,6 +134,12 @@ const incrementItem = async (req, res) => {
         const item = await Item.findById(id);
         if (!item) {
             return res.status(404).json({ message: 'Item not found' });
+        }
+
+        const role = (req.session.role || 'Guest');
+        const isOwner = item.owner && item.owner.toString() === req.session.userId;
+        if (role === 'Guest' && !isOwner) {
+            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
         }
 
         const newQuantity = item.quantity + incrementAmount;
@@ -159,6 +186,12 @@ const decrementItem = async (req, res) => {
         const item = await Item.findById(id);
         if (!item) {
             return res.status(404).json({ message: 'Item not found' });
+        }
+
+        const role = (req.session.role || 'Guest');
+        const isOwner = item.owner && item.owner.toString() === req.session.userId;
+        if (role === 'Guest' && !isOwner) {
+            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
         }
 
         if (item.quantity <= 0) {
