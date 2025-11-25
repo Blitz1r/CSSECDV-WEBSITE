@@ -1,5 +1,6 @@
 const { Order } = require('../models/OrderModel');
 const Transaction = require('../models/TransactionModel');
+const { guestFilterQuery, assertOwnershipOrElevated } = require('../middleware/authorization');
 
 // Controller function to handle adding an order
 const addOrderHandler = async (req, res) => {
@@ -16,9 +17,7 @@ const addOrderHandler = async (req, res) => {
 // Controller function to get all orders
 const getOrders = async (req, res) => {
     try {
-        const role = (req.session.role || 'Guest');
-        const filter = role === 'Guest' ? { owner: req.session.userId } : {};
-        const orders = await Order.find(filter); // Fetch filtered orders from the database
+        const orders = await Order.find(guestFilterQuery(req)); // Fetch filtered orders from the database
         res.json(orders); // Send the orders as a JSON response
     } catch (error) {
         res.status(500).json({ message: 'Error fetching orders' });
@@ -33,11 +32,7 @@ const updateOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
-        const role = (req.session.role || 'Guest');
-        const isOwner = order.owner && order.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot modify orders you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, order.owner, 'update order')) return;
         if (orderID !== undefined) order.orderID = orderID;
         if (itemName !== undefined) order.itemName = itemName;
         if (status !== undefined) order.status = status;
@@ -60,11 +55,7 @@ const deleteOrder = async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        const role = (req.session.role || 'Guest');
-        const isOwner = order.owner && order.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot delete orders you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, order.owner, 'delete order')) return;
 
         const deletedOrder = await Order.findByIdAndDelete(id);
 

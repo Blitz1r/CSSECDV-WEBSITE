@@ -1,6 +1,7 @@
 // controllers/itemController.js
 const Item = require('../models/ItemModel');
 const Transaction = require('../models/TransactionModel');
+const { guestFilterQuery, assertOwnershipOrElevated } = require('../middleware/authorization');
 
 const LOW_STOCK_THRESHOLD = 10;
 const NO_STOCK_THRESHOLD = 0;
@@ -45,9 +46,7 @@ const addItem = async (req, res) => {
 // Get all items
 const getItems = async (req, res) => {
     try {
-        const role = (req.session.role || 'Guest');
-        const filter = role === 'Guest' ? { owner: req.session.userId } : {};
-        const items = await Item.find(filter);
+        const items = await Item.find(guestFilterQuery(req));
         res.status(200).json(items);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching items', error });
@@ -65,11 +64,7 @@ const updateItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        const role = (req.session.role || 'Guest');
-        const isOwner = item.owner && item.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, item.owner, 'update item')) return;
 
         item.itemName = itemName;
         item.category = category;
@@ -102,11 +97,7 @@ const deleteItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        const role = (req.session.role || 'Guest');
-        const isOwner = item.owner && item.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot delete items you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, item.owner, 'delete item')) return;
 
         const deletedItem = await Item.findByIdAndDelete(id);
 
@@ -136,11 +127,7 @@ const incrementItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        const role = (req.session.role || 'Guest');
-        const isOwner = item.owner && item.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, item.owner, 'increment item')) return;
 
         const newQuantity = item.quantity + incrementAmount;
         let newStatus = 'In Stock';
@@ -188,11 +175,7 @@ const decrementItem = async (req, res) => {
             return res.status(404).json({ message: 'Item not found' });
         }
 
-        const role = (req.session.role || 'Guest');
-        const isOwner = item.owner && item.owner.toString() === req.session.userId;
-        if (role === 'Guest' && !isOwner) {
-            return res.status(403).json({ message: 'Forbidden: cannot modify items you do not own' });
-        }
+        if (!assertOwnershipOrElevated(req, res, item.owner, 'decrement item')) return;
 
         if (item.quantity <= 0) {
             return res.status(400).json({ message: 'Cannot decrement. Quantity already at 0.' });
