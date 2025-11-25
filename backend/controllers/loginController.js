@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const User = require('../models/UserModel');
 const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
+const { addLog } = require('./loggerController');
 
 // Account lockout configuration
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10);
@@ -39,6 +40,7 @@ const loginUser = async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
+            await addLog({ eventType: 'auth_attempt', action: 'Login failed: unknown email', level: 'SECURITY', meta: { email } });
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
@@ -46,6 +48,7 @@ const loginUser = async (req, res) => {
         if (user.lockUntil && user.lockUntil.getTime && user.lockUntil.getTime() > Date.now()) {
             const msRemaining = user.lockUntil.getTime() - Date.now();
             const minutes = Math.ceil(msRemaining / 60000);
+            await addLog({ eventType: 'auth_attempt', action: 'Login blocked: account locked', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { minutesRemaining: minutes } });
             return res.status(423).json({ success: false, message: `Account locked. Try again in about ${minutes} minute(s).` });
         }
 
@@ -81,9 +84,11 @@ const loginUser = async (req, res) => {
                 user.lockUntil = new Date(Date.now() + LOCK_TIME_MS);
                 user.failedLoginAttempts = 0; // reset counter after locking
                 await user.save();
+                await addLog({ eventType: 'auth_attempt', action: 'Account locked after max failures', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { maxAttempts: MAX_LOGIN_ATTEMPTS } });
                 return res.status(423).json({ success: false, message: 'Account locked due to too many failed attempts. Try again later.' });
             } else {
                 await user.save();
+                await addLog({ eventType: 'auth_attempt', action: 'Login failed: bad password', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { failedLoginAttempts: user.failedLoginAttempts } });
                 return res.status(401).json({ success: false, message: 'Invalid email or password' });
             }
         }
@@ -102,6 +107,7 @@ const loginUser = async (req, res) => {
 
         // Two-step: issue security token & question; session not yet established
         const token = createSecurityToken(user._id.toString());
+        await addLog({ eventType: 'auth_attempt', action: 'Password phase passed; security question issued', level: 'INFO', userEmail: user.email, userId: user._id.toString()});
         return res.json({
             success: true,
             securityRequired: true,
@@ -111,6 +117,7 @@ const loginUser = async (req, res) => {
         });
     } catch (error) {
         console.error('Error during login:', error);
+        await addLog({ eventType: 'error', action: 'Login controller exception', level: 'ERROR', meta: { message: error.message } });
         return res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -124,10 +131,12 @@ const resetPassword = async (req, res) => {
     try {
         const policy = validatePassword(password);
         if (!policy.valid) {
+            await addLog({ eventType: 'validation_failure', action: 'Password reset failed policy', level: 'WARN', userEmail: email, meta: { errors: policy.errors } });
             return res.status(400).json({ message: policy.errors.join('\n'), policy: describePolicy() });
         }
         const user = await User.findOne({ email });
         if (!user) {
+            await addLog({ eventType: 'validation_failure', action: 'Password reset unknown email', level: 'WARN', meta: { email } });
             return res.status(404).json({ message: 'No account found with that email' });
         }
         // Enforce minimum password age
@@ -137,6 +146,7 @@ const resetPassword = async (req, res) => {
         }
         // Prevent password reuse against current and history
         if (await user.isPasswordReused(password)) {
+            await addLog({ eventType: 'validation_failure', action: 'Password reuse attempt', level: 'SECURITY', userEmail: user.email, userId: user._id.toString()});
             return res.status(400).json({ message: 'Cannot reuse a previous password. Choose a new one.', policy: describePolicy() });
         }
         const oldHash = user.password && user.password.startsWith('$2') ? user.password : null;
@@ -160,9 +170,11 @@ const resetPassword = async (req, res) => {
         }
         user.lastPasswordChange = new Date();
         await user.save();
+        await addLog({ eventType: 'auth_attempt', action: 'Password reset successful', level: 'INFO', userEmail: user.email, userId: user._id.toString()});
         return res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {
         console.error('Password reset error:', error);
+        await addLog({ eventType: 'error', action: 'Password reset controller exception', level: 'ERROR', meta: { message: error.message } });
         return res.status(500).json({ message: `Server error: ${error.message}` });
     }
 };
@@ -208,15 +220,18 @@ const verifySecurityAnswer = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
         if (String(user.securityAnswer).trim().toLowerCase() !== String(answer).trim().toLowerCase()) {
+            await addLog({ eventType: 'auth_attempt', action: 'Security question failed', level: 'SECURITY', userEmail: user.email, userId: user._id.toString()});
             return res.status(401).json({ success: false, message: 'Incorrect security answer' });
         }
         // Establish session now
         req.session.userId = user._id.toString();
         req.session.email = user.email;
         req.session.role = user.role;
+        await addLog({ eventType: 'auth_attempt', action: 'Login successful', level: 'INFO', userEmail: user.email, userId: user._id.toString() });
         return res.json({ success: true, user: { email: user.email, role: user.role } });
     } catch (error) {
         console.error('Security verification error:', error);
+        await addLog({ eventType: 'error', action: 'Security verification exception', level: 'ERROR', meta: { message: error.message } });
         return res.status(500).json({ success: false, message: 'Server error' });
     }
 };
