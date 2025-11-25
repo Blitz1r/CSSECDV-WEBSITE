@@ -60,6 +60,7 @@ const OrderForm = ({ onSubmit }) => {
         value={orderData.itemName}
         onChange={handleChange}
         placeholder="Item Name"
+        minLength="3"
         required
       />
       <input

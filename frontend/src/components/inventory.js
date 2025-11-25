@@ -365,6 +365,8 @@ const Inventory = () => {
                                     name="itemName"
                                     value={newItem.itemName}
                                     onChange={handleChange}
+                                    placeholder="Item Name"
+                                    minLength="3"
                                     required
                                 />
                             </div>
@@ -433,6 +435,9 @@ const Inventory = () => {
                                     name="description"
                                     value={newItem.description}
                                     onChange={handleChange}
+                                    placeholder="Description"
+                                    minLength="3"
+                                    required
                                 />
                             </div>
 
@@ -537,13 +542,16 @@ const Inventory = () => {
                 />
             </td>
             <td>
-                <input
-                    type="text"
-                    required
+                <select
                     name="category"
                     value={editFormData.category}
-                    onChange={handleEditFormChange}
-                />
+                    onChange={handleEditFormChange}>
+                    <option value="Router">Router</option>
+                    <option value="Access Point">Access Point</option>
+                    <option value="Switch">Switch</option>
+                    <option value="Patch Panel">Patch Panel</option>
+                    <option value="Cloud Key">Cloud Key</option>
+                </select>
             </td>
             <td>
                 <input
