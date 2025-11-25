@@ -1,11 +1,14 @@
 const express = require('express');
 const { getAllLogs, addLog } = require('../controllers/loggerController');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
-router.use(requireAuth);
+// Authentication first then admin role enforcement for all log routes
+router.use(requireAuth, requireRole('Administrator'));
 
-// GET route to all logs
+// GET all logs (admin only)
 router.get('/', getAllLogs);
-router.get('add', addLog);
+// Add a log entry (admin only)
+router.post('/add', addLog);
+
 module.exports = router;

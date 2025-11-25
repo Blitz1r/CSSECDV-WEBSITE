@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useAuth } from '../auth/AuthProvider';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/sidebar.css';
 
 const Sidebar = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(true);
+    const { role } = useAuth();
     const navigate = useNavigate();
 
     const toggleSidebar = () => {
@@ -109,6 +111,14 @@ const Sidebar = () => {
                         <span className="text">Settings</span>
                     </Link>
                 </li>
+                {role === 'Administrator' && (
+                <li>
+                    <Link to="/logs" title="System Logs">
+                        <span className="icon">🧾</span>
+                        <span className="text">Logs</span>
+                    </Link>
+                </li>
+                )}
                 <li>
                     <a href="#">
                         <span className="icon">❓</span>
