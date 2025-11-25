@@ -90,7 +90,7 @@ const loginUser = async (req, res) => {
                 return res.status(423).json({ success: false, message: 'Account locked due to too many failed attempts. Try again later.' });
             } else {
                 await user.save();
-                await addLog({ eventType: 'auth_attempt', action: 'Login failed: bad password', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { failedLoginAttempts: user.failedLoginAttempts } });
+                await addLog({ eventType: 'auth_attempt', action: 'Login failed: invalid password', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { failedLoginAttempts: user.failedLoginAttempts } });
                 user.lastFailedLoginAt = new Date();
                 user.lastUseAt = new Date();
                 await user.save();

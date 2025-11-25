@@ -34,9 +34,40 @@ function guestFilterQuery(req) {
   return userRole(req) === 'Guest' ? { owner: userId(req) } : {};
 }
 
+// Express middleware: require authenticated session
+async function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return deny(req, res, 401, 'Authentication required', 'Unauthenticated access attempt');
+  }
+  next();
+}
+
+// Express middleware factory: require one of the allowed roles
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+      return deny(req, res, 401, 'Authentication required', 'Unauthenticated access attempt');
+    }
+    const role = userRole(req);
+    if (allowedRoles.length && !allowedRoles.includes(role)) {
+      return deny(
+        req,
+        res,
+        403,
+        'Insufficient role privileges',
+        `Role '${role}' blocked from resource`,
+        { requiredRoles: allowedRoles }
+      );
+    }
+    next();
+  };
+}
+
 module.exports = {
   guestFilterQuery,
-  enforceAction
+  enforceAction,
+  requireAuth,
+  requireRole
 };
 
 // Enforce action via policy map with ownership fallback.

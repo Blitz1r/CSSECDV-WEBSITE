@@ -1,6 +1,6 @@
 const express = require('express');
 const { getAllLogs, addLog } = require('../controllers/loggerController');
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/authorization');
 const router = express.Router();
 
 // Authentication first then admin role enforcement for all log routes

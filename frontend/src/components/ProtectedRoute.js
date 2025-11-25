@@ -9,7 +9,7 @@ export const ProtectedRoute = ({ children, roles }) => {
   if (loading) return <div>Loading...</div>;
   if (!authenticated) return <Navigate to="/" replace />;
   if (roles && roles.length && !roles.includes(role)) {
-    return <div>Forbidden: insufficient privileges.</div>; // Fails securely with message
+    return <div>403 Forbidden</div>; // Fails securely with message
   }
   return children;
 };

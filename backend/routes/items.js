@@ -1,7 +1,7 @@
 // routes/items.js
 const express = require('express');
 const { addItem, getItems, updateItem, deleteItem, incrementItem, decrementItem } = require('../controllers/itemController.js');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/authorization');
 const router = express.Router();
 
 // Apply auth to all item routes

@@ -1,5 +1,5 @@
 const express = require('express')
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/authorization');
 
 const {
     createWorkout,
