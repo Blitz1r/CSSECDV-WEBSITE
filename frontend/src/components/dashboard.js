@@ -67,17 +67,8 @@ const Dashboard = () => {
             <Sidebar />
             <div className="main-content">
             <header>
-                <div className="header-content">
-                    <div className="user-profile" onClick={() => setOpenProfile(!openProfile)}>
-                        <span className="emoji">😊</span>
-                        <span>Username</span>
-                        {openProfile && (
-                            <ul className="user-menu">
-                                <li><a href="#">Profile</a></li>
-                                <li><a href="/">Log Out</a></li>
-                            </ul>
-                        )}
-                    </div>
+                <div className="header-content .space-between .flex-row">
+                    <span></span><span></span>
                 </div>
             </header>
                 <div className="cards">
