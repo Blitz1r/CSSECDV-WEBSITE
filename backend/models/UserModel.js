@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         default: 'Guest',
         required: true
     },
-    securityQuestion: { type: String, required: true, default:'What is your Fav hiking trail?'},
+    securityQuestion: { type: String, required: true, default:'What is your favorite hiking trail?'},
     securityAnswer: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },

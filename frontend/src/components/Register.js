@@ -120,7 +120,7 @@ function Register() {
                             type="text"
                             value={securityAnswer}
                             onChange={(e) => setSecurityAnswer(e.target.value)}
-                            placeholder="What is your Fav hiking trail?"
+                            placeholder="What is your favorite hiking trail? (Security Question)"
                             required
                         />
                         <button type="submit" disabled={loading}>
