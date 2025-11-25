@@ -13,10 +13,34 @@ const categoryRoutes = require('./routes/category');
 const app = express();
 
 // middleware
-app.use(cors({
-    origin: process.env.FRONTEND_ORIGIN, 
-    credentials: true // Allow credentials (cookies)
-}));
+// Robust CORS: allow configured origin and localhost:3000 during development
+const allowedOrigins = [
+    process.env.FRONTEND_ORIGIN,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+].filter(Boolean);
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow non-browser requests (no origin) and any whitelisted origin
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`CORS blocked origin: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+};
+
+app.use((req, _res, next) => {
+    if (req.headers.origin) {
+        console.log('Request origin:', req.headers.origin);
+    }
+    next();
+});
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.use(session({
