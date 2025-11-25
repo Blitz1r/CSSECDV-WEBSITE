@@ -8,10 +8,10 @@ function VerifySecurityQuestion() {
     const [loading, setLoading] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
-    const { email, securityQuestion } = location.state || {};
+    const { email, securityQuestion, token } = location.state || {};
 
-    if (!email || !securityQuestion) {
-        return <div>Invalid access. <a href="/login">Go back to login</a></div>;
+    if (!email || !securityQuestion || !token) {
+        return <div>Invalid access. <a href="/">Go back to login</a></div>;
     }
 
     const handleSubmit = async (e) => {
@@ -23,15 +23,19 @@ function VerifySecurityQuestion() {
             const response = await fetch(`${config.API_URL}/api/login/verify-security`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, answer }),
+                credentials: 'include',
+                body: JSON.stringify({ token, answer }),
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                // Store token or session
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+            if (response.ok && data.success) {
+                try {
+                    localStorage.setItem('auth', 'true');
+                    localStorage.setItem('email', data.user.email);
+                    localStorage.setItem('role', data.user.role);
+                    window.dispatchEvent(new Event('auth-changed'));
+                } catch {}
                 navigate('/dashboard');
             } else {
                 setError(data.message || 'Incorrect answer');

@@ -33,24 +33,15 @@ const Login = () => {
             const data = await response.json();
             setLoading(false);
 
-            if (response.ok && data.success) {
-                setSuccess(true); // Show success message
-                try {
-                    localStorage.setItem('auth', 'true');
-                    localStorage.setItem('email', data?.user?.email || email);
-                    if (data?.user?.role) {
-                        localStorage.setItem('role', data.user.role);
-                    }
-                    // Notify App to re-check session
-                    window.dispatchEvent(new Event('auth-changed'));
-                } catch {}
-                navigate('/verify-security', { 
-                    state: { 
-                        email: data.email, 
+            if (response.ok && data.success && data.securityRequired) {
+                setSuccess(true); // first step success
+                navigate('/verify-security', {
+                    state: {
+                        email: data.email,
                         securityQuestion: data.securityQuestion,
-                        nextAction: 'login' 
-                    } 
-                }); // Redirect on success
+                        token: data.token
+                    }
+                });
             } else {
                 setError(true); // Show error if login fails
             }

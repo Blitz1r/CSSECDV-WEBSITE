@@ -1,6 +1,28 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const User = require('../models/UserModel');
 const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
+
+// In-memory pending map: token -> { userId, expires }
+const pendingSecurity = new Map();
+const SECURITY_TOKEN_MS = 5 * 60 * 1000; // 5 minutes
+
+function createSecurityToken(userId) {
+    const token = crypto.randomBytes(24).toString('hex');
+    pendingSecurity.set(token, { userId, expires: Date.now() + SECURITY_TOKEN_MS });
+    return token;
+}
+
+function consumeSecurityToken(token) {
+    const entry = pendingSecurity.get(token);
+    if (!entry) return null;
+    if (entry.expires < Date.now()) {
+        pendingSecurity.delete(token);
+        return null;
+    }
+    pendingSecurity.delete(token);
+    return entry.userId;
+}
 
 // POST /api/login
 const loginUser = async (req, res) => {
@@ -38,12 +60,15 @@ const loginUser = async (req, res) => {
             await user.save();
         }
 
-        // Set session attributes including role
-        req.session.userId = user._id.toString();
-        req.session.email = user.email;
-        req.session.role = user.role;
-
-        return res.json({ success: true, user: { email: user.email, role: user.role } });
+        // Two-step: issue security token & question; session not yet established
+        const token = createSecurityToken(user._id.toString());
+        return res.json({
+            success: true,
+            securityRequired: true,
+            token,
+            email: user.email,
+            securityQuestion: user.securityQuestion
+        });
     } catch (error) {
         console.error('Error during login:', error);
         return res.status(500).json({ success: false, message: 'Server error' });
@@ -102,27 +127,30 @@ const sessionInfo = (req, res) => {
 };
 
 const verifySecurityAnswer = async (req, res) => {
-    const { email, answer } = req.body;
-
+    const { token, answer } = req.body;
+    if (!token || !answer) {
+        return res.status(400).json({ success: false, message: 'Token and answer are required' });
+    }
     try {
-        const user = await User.findOne({ email });
-
+        const userId = consumeSecurityToken(token);
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+        }
+        const user = await User.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
-
-        if (user.securityAnswer.toLowerCase() === answer.toLowerCase()) {
-            res.status(200).json({
-                success: true,
-                message: 'Security answer verified',
-                user: { email: user.email, role: user.role }
-            });
-        } else {
-            res.status(401).json({ message: 'Incorrect security answer' });
+        if (String(user.securityAnswer).trim().toLowerCase() !== String(answer).trim().toLowerCase()) {
+            return res.status(401).json({ success: false, message: 'Incorrect security answer' });
         }
+        // Establish session now
+        req.session.userId = user._id.toString();
+        req.session.email = user.email;
+        req.session.role = user.role;
+        return res.json({ success: true, user: { email: user.email, role: user.role } });
     } catch (error) {
         console.error('Security verification error:', error);
-        res.status(500).json({ message: 'Server error' });
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
