@@ -36,21 +36,24 @@ async function run() {
       password: 'Admin!2025Secure', 
       role: 'Administrator',
       securityQuestion: 'What is your favorite color?',
-      securityAnswer: 'Blue'
+      securityAnswer: 'Blue',
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000) // 48h ago
     },
     { 
       email: 'manager@example.com', 
       password: 'Manager!2025Secure', 
       role: 'Manager',
       securityQuestion: 'What is your favorite color?',
-      securityAnswer: 'Green'
+      securityAnswer: 'Green',
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000)
     },
     { 
       email: 'guest@example.com', 
       password: 'Guest!2025Secure', 
       role: 'Guest',
       securityQuestion: 'What is your favorite color?',
-      securityAnswer: 'Yellow'
+      securityAnswer: 'Yellow',
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000)
     }
   ];
 

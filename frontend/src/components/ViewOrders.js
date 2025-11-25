@@ -13,7 +13,12 @@ const ViewOrders = () => {
     const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${config.API_URL}/api/orders`);
+            const response = await fetch(`${config.API_URL}/api/orders`, { credentials: 'include' });
+            if (!response.ok) {
+                console.error('Failed to fetch orders:', response.status);
+                setOrders([]);
+                return;
+            }
             const data = await response.json();
             setOrders(data);
         } catch (error) {
@@ -37,7 +42,8 @@ const ViewOrders = () => {
             setOrders(prev => prev.filter(order => (order._id || order.orderID) !== orderId));
 
             const response = await fetch(`${config.API_URL}/api/orders/delete/${orderId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             });
 
             console.log('Delete response status:', response.status);

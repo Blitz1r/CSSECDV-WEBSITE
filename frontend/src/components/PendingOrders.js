@@ -11,7 +11,11 @@ const PendingOrders = () => {
 
     const fetchPendingOrders = async () => {
         try {
-            const response = await fetch(`${config.API_URL}/api/orders`);
+            const response = await fetch(`${config.API_URL}/api/orders`, { credentials: 'include' });
+            if (!response.ok) {
+                console.error('Failed to fetch orders:', response.status);
+                return setPendingOrders([]);
+            }
             const data = await response.json();
             // Filter only pending orders
             const pending = data.filter(order => order.status === 'Pending');
@@ -27,27 +31,18 @@ const PendingOrders = () => {
         fetchPendingOrders();
     }, []);
 
-    const handleOrderSubmit = async (newOrder) => {
-        try {
-            const response = await fetch(`${config.API_URL}/api/orders/add`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newOrder)
-            });
-            if (response.ok) {
-                fetchPendingOrders(); // Refresh the list after adding
-            }
-        } catch (error) {
-            console.error('Error creating order:', error);
-        }
+    // OrderForm already creates the order and passes back created DB doc.
+    const handleOrderSubmit = async () => {
+        await fetchPendingOrders();
     };
 
     const handleOrderDelete = async (orderId) => {
         try {
-            setPendingOrders(pendingOrders.filter(order => order._id !== orderId));
-            await fetchPendingOrders(); // Refresh the list after deletion
+            const response = await fetch(`${config.API_URL}/api/orders/delete/${orderId}`, { method: 'DELETE', credentials: 'include' });
+            if (!response.ok) {
+                console.error('Failed to delete order:', response.status);
+            }
+            await fetchPendingOrders();
         } catch (error) {
             console.error('Error deleting order:', error);
         }

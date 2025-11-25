@@ -6,7 +6,7 @@ const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
 // Account lockout configuration
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10);
 const LOCK_TIME_MINUTES = parseInt(process.env.LOCK_TIME_MINUTES || '15', 10);
-const PASSWORD_HISTORY_LIMIT= parseInt(process.env.PASSWORD_HISTORY_LIMIT || '5', 10)
+const PASSWORD_HISTORY_LIMIT = parseInt(process.env.PASSWORD_HISTORY_LIMIT || '5', 10);
 const LOCK_TIME_MS = LOCK_TIME_MINUTES * 60 * 1000;
 
 // In-memory pending map: token -> { userId, expires }
@@ -130,6 +130,11 @@ const resetPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'No account found with that email' });
         }
+        // Enforce minimum password age
+        if (!user.canChangePassword()) {
+            const minutesLeft = user.passwordAgeRemainingMinutes();
+            return res.status(400).json({ message: `Password was changed too recently. Try again in ${minutesLeft} minute(s).` });
+        }
         // Prevent password reuse against current and history
         if (await user.isPasswordReused(password)) {
             return res.status(400).json({ message: 'Cannot reuse a previous password. Choose a new one.', policy: describePolicy() });
@@ -153,6 +158,7 @@ const resetPassword = async (req, res) => {
         if (user.passwordHistory.length > limit) {
             user.passwordHistory = user.passwordHistory.slice(0, limit);
         }
+        user.lastPasswordChange = new Date();
         await user.save();
         return res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {

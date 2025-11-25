@@ -24,7 +24,7 @@ const DoughnutChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`${config.API_URL}/api/items`);
+        const response = await fetch(`${config.API_URL}/api/items`, { credentials: 'include' });
         const items = await response.json();
 
         // Group items by category and sum their quantities

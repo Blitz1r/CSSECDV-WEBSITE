@@ -8,6 +8,7 @@ const loginRoutes = require('./routes/login.js');  // Import login route
 const orderRoutes = require('./routes/orders');
 const itemRoutes = require('./routes/items');  // Add the item routes
 const categoryRoutes = require('./routes/category');
+const Item = require('./models/ItemModel'); // Import Item model for update route
 
 // express app
 const app = express();
@@ -76,20 +77,19 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
     .catch(err => {
         console.log('Database connection error:', err);
     });
-    app.put('/api/items/update/:id', async (req, res) => {
-        const { id } = req.params;
-        const updatedData = req.body;
-    
-        try {
-            const updatedItem = await Item.findByIdAndUpdate(id, updatedData, { new: true });
-            if (!updatedItem) {
-                return res.status(404).json({ message: 'Item not found' });
-            }
-            res.json(updatedItem);
-        } catch (error) {
-            res.status(500).json({ message: 'Error updating item', error });
+app.put('/api/items/update/:id', async (req, res) => {
+    const { id } = req.params;
+    const updatedData = req.body;
+    try {
+        const updatedItem = await Item.findByIdAndUpdate(id, updatedData, { new: true });
+        if (!updatedItem) {
+            return res.status(404).json({ message: 'Item not found' });
         }
-    });
+        res.json(updatedItem);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating item', error: error.message });
+    }
+});
     
 
 // start the server

@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // e.g., "addItem", "createOrder"
-    action: { type: Object, required: true }, // Specific details of the transaction
+    name: { type: String, required: true }, // e.g., item name or action subject
+    action: { type: String, required: true }, // description of what happened
     timestamp: { type: Date, default: Date.now }, // When the transaction occurred
 });
 

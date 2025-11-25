@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { validatePassword } = require('../utils/passwordPolicy');
 
 const PASSWORD_HISTORY_LIMIT = parseInt(process.env.PASSWORD_HISTORY_LIMIT || '5', 10);
+const MIN_PASSWORD_AGE_HOURS = parseInt(process.env.MIN_PASSWORD_AGE_HOURS || '24', 10);
 
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -18,7 +19,8 @@ const userSchema = new mongoose.Schema({
     securityQuestion: { type: String, required: true },
     securityAnswer: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
-    lockUntil: { type: Date, default: null }
+    lockUntil: { type: Date, default: null },
+    lastPasswordChange: { type: Date, default: null }
 }, { timestamps: true });
 
 // Helper to check if account is currently locked
@@ -51,6 +53,7 @@ userSchema.pre('save', async function (next) {
             if (this.passwordHistory.length > PASSWORD_HISTORY_LIMIT) {
                 this.passwordHistory = this.passwordHistory.slice(0, PASSWORD_HISTORY_LIMIT);
             }
+            this.lastPasswordChange = new Date();
         } catch (err) {
             return next(err);
         }
@@ -78,6 +81,20 @@ userSchema.methods.isPasswordReused = async function (candidate) {
         } catch (_) { /* ignore compare errors */ }
     }
     return false;
+};
+
+userSchema.methods.canChangePassword = function () {
+    if (!this.lastPasswordChange) return true;
+    const ageMs = Date.now() - this.lastPasswordChange.getTime();
+    return ageMs >= MIN_PASSWORD_AGE_HOURS * 3600000;
+};
+
+userSchema.methods.passwordAgeRemainingMinutes = function () {
+    if (!this.lastPasswordChange) return 0;
+    const ageMs = Date.now() - this.lastPasswordChange.getTime();
+    const requiredMs = MIN_PASSWORD_AGE_HOURS * 3600000;
+    if (ageMs >= requiredMs) return 0;
+    return Math.ceil((requiredMs - ageMs) / 60000);
 };
 
 const User = mongoose.model('User', userSchema);
