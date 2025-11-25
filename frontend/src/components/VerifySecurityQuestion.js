@@ -11,7 +11,7 @@ function VerifySecurityQuestion() {
     const { email, securityQuestion, token } = location.state || {};
 
     if (!email || !securityQuestion || !token) {
-        return <div>Invalid access. <a href="/">Go back to login</a></div>;
+        navigate('/');
     }
 
     const handleSubmit = async (e) => {
