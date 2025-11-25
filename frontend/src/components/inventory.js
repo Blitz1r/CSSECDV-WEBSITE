@@ -1,5 +1,5 @@
 // inventory.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from './Sidebar';
 import '../styles/inventory.css';
@@ -44,9 +44,10 @@ const Inventory = () => {
         setIsAddingNew(!isAddingNew);
     };
 
-    // Fetch items from the backend
+    // Fetch items and categories from the backend
     useEffect(() => {
         fetchItems();
+        fetchCategories();
     }, []);
 
     const fetchItems = async () => {
@@ -60,17 +61,28 @@ const Inventory = () => {
         }
     };
 
+    // Fetch categories from backend and merge with defaults
+    const [fetchedCategories, setFetchedCategories] = useState([]);
+    const fetchCategories = async () => {
+        try {
+            const res = await axios.get(`${config.API_URL}/api/categories/all`);
+            setFetchedCategories(res?.data?.categories || []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         if (name === 'category') {
             if (value === '') {
                 setIsCreatingCustomCategory(true);
-            } else if (fixedCategories.includes(value)) {
+            } else {
                 setNewItem(prevState => ({
                     ...prevState,
                     [name]: value
                 }));
-        }
+            }
         } else {
             setNewItem(prevState => ({
                 ...prevState,
@@ -268,6 +280,14 @@ const Inventory = () => {
     const [customCategoryInput, setCustomCategoryInput] = useState('');
     const [addedCustomCategories, setAddedCustomCategories] = useState([]);
 
+    // Build merged category list: defaults + fetched additions (no duplicates)
+    const mergedCategories = useMemo(() => {
+        const fetchedNames = fetchedCategories.map(c => c.categName).filter(Boolean);
+        const extras = fetchedNames.filter(c => !fixedCategories.includes(c));
+        const withCustom = [...fixedCategories, ...extras];
+        return Array.from(new Set(withCustom)).sort((a, b) => a.localeCompare(b));
+    }, [fetchedCategories, fixedCategories]);
+
     const addCustomCategory = () => {
         if (customCategoryInput.trim()) {
         setAddedCustomCategories(prev => [...prev, customCategoryInput]);
@@ -379,7 +399,7 @@ const Inventory = () => {
                                     value={newItem.category}
                                     onChange={handleChange}
                                 >
-                                    {fixedCategories.map((category) => (
+                                    {mergedCategories.map((category) => (
                                         <option key={category} value={category}>{category}</option>
                                     ))}
                                 </select>
@@ -450,11 +470,9 @@ const Inventory = () => {
                     <div className="filters">
                         <select name="category" value={filters.category} onChange={handleFilterChange}>
                             <option value="">Filter by Category</option>
-                            <option value="Router">Router</option>
-                            <option value="Access Point">Access Point</option>
-                            <option value="Switch">Switch</option>
-                            <option value="Patch Panel">Patch Panel</option>
-                            <option value="Cloud Key">Cloud Key</option>
+                            {mergedCategories.map((category) => (
+                                <option key={category} value={category}>{category}</option>
+                            ))}
                         </select>
 
                         <select name="status" value={filters.status} onChange={handleFilterChange}>
@@ -546,11 +564,9 @@ const Inventory = () => {
                     name="category"
                     value={editFormData.category}
                     onChange={handleEditFormChange}>
-                    <option value="Router">Router</option>
-                    <option value="Access Point">Access Point</option>
-                    <option value="Switch">Switch</option>
-                    <option value="Patch Panel">Patch Panel</option>
-                    <option value="Cloud Key">Cloud Key</option>
+                    {mergedCategories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                    ))}
                 </select>
             </td>
             <td>
