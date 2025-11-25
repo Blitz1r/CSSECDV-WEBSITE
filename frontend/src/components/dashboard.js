@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '../styles/dashboard.css';
 import '../styles/sidebar.css';
 import Sidebar from './Sidebar';
+import { useAuth } from '../auth/AuthProvider';
 import DoughnutChart from './DoughnutChart';
 import config from '../config';
 
@@ -62,13 +63,17 @@ const Dashboard = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, [openProfile]);
 
+    const { previousLastUseAt } = useAuth();
+    const formattedLastUse = previousLastUseAt ? new Date(previousLastUseAt).toLocaleString() : 'First login';
+
     return (
         <div className="container">
             <Sidebar />
             <div className="main-content">
             <header>
                 <div className="header-content .space-between .flex-row">
-                    <span></span><span></span>
+                    <span className="last-use-label">Last Account Use:</span>
+                    <span className="last-use-value">{formattedLastUse}</span>
                 </div>
             </header>
                 <div className="cards">

@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [previousLastUseAt, setPreviousLastUseAt] = useState(null);
 
   const refreshSession = useCallback(async () => {
     setLoading(true);
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
         if (data.authenticated) {
           setAuthenticated(true);
           setUser(data.user);
+          setPreviousLastUseAt(data.previousLastUseAt || null);
           try {
             localStorage.setItem('email', data.user.email);
             localStorage.setItem('role', data.user.role);
@@ -67,6 +69,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     authenticated,
     user,
+    previousLastUseAt,
     role: user?.role,
     refreshSession,
     logout
