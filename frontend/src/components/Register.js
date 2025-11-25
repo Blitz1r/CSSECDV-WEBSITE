@@ -37,14 +37,14 @@ function Register() {
             setLoading(false);
             return;
         }
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
 
-        if (password.length < 6) {
-            setError(true);
-            setErrorMessage('Password must be at least 6 characters');
-            setLoading(false);
-            return;
-        }
-
+    if (!passwordRegex.test(password)) {
+        setError(true);
+        setErrorMessage('Password must be 6+ chars and contain a number and special character (!@#$%^&*)');
+        setLoading(false);
+        return;
+    }
         try {
             const response = await fetch(`${config.API_URL}/api/login/register`, {
                 method: 'POST',
@@ -118,16 +118,9 @@ function Register() {
                         />
                         <input
                             type="text"
-                            value={securityQuestion}
-                            onChange={(e) => setSecurityQuestion(e.target.value)}
-                            placeholder="Security Question"
-                            required
-                        />
-                        <input
-                            type="text"
                             value={securityAnswer}
                             onChange={(e) => setSecurityAnswer(e.target.value)}
-                            placeholder="Security Answer"
+                            placeholder="What is your Fav hiking trail?"
                             required
                         />
                         <button type="submit" disabled={loading}>
