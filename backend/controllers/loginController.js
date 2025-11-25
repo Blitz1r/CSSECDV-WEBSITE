@@ -3,6 +3,11 @@ const crypto = require('crypto');
 const User = require('../models/UserModel');
 const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
 
+// Account lockout configuration
+const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10);
+const LOCK_TIME_MINUTES = parseInt(process.env.LOCK_TIME_MINUTES || '15', 10);
+const LOCK_TIME_MS = LOCK_TIME_MINUTES * 60 * 1000;
+
 // In-memory pending map: token -> { userId, expires }
 const pendingSecurity = new Map();
 const SECURITY_TOKEN_MS = 5 * 60 * 1000; // 5 minutes
@@ -36,6 +41,13 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
+        // If account is locked, block login
+        if (user.lockUntil && user.lockUntil.getTime && user.lockUntil.getTime() > Date.now()) {
+            const msRemaining = user.lockUntil.getTime() - Date.now();
+            const minutes = Math.ceil(msRemaining / 60000);
+            return res.status(423).json({ success: false, message: `Account locked. Try again in about ${minutes} minute(s).` });
+        }
+
         let passwordMatches = false;
         if (user.password && user.password.startsWith('$2')) {
             // Already hashed
@@ -51,14 +63,30 @@ const loginUser = async (req, res) => {
         }
 
         if (!passwordMatches) {
-            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+            // Increment failed attempts and lock if threshold reached
+            user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+            if (user.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                user.lockUntil = new Date(Date.now() + LOCK_TIME_MS);
+                user.failedLoginAttempts = 0; // reset counter after locking
+                await user.save();
+                return res.status(423).json({ success: false, message: 'Account locked due to too many failed attempts. Try again later.' });
+            } else {
+                await user.save();
+                return res.status(401).json({ success: false, message: 'Invalid email or password' });
+            }
         }
 
         // Ensure role exists (backfill legacy users without role)
         if (!user.role) {
             user.role = 'Guest';
-            await user.save();
         }
+
+        // Successful password: clear lock counters
+        if (user.failedLoginAttempts || user.lockUntil) {
+            user.failedLoginAttempts = 0;
+            user.lockUntil = null;
+        }
+        await user.save();
 
         // Two-step: issue security token & question; session not yet established
         const token = createSecurityToken(user._id.toString());

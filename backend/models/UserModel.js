@@ -12,8 +12,15 @@ const userSchema = new mongoose.Schema({
         required: true 
     },
     securityQuestion: {type: String, required: true},
-    securityAnswer: {type: String, required: true}
+    securityAnswer: {type: String, required: true},
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date, default: null }
 }, { timestamps: true });
+
+// Helper to check if account is currently locked
+userSchema.methods.isLocked = function() {
+    return !!(this.lockUntil && this.lockUntil.getTime() > Date.now());
+};
 
 // Hash password if modified and not already hashed
 userSchema.pre('save', async function (next) {
