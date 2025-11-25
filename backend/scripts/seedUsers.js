@@ -5,10 +5,11 @@
  *   $env:MONGO_URI="mongodb://localhost:27017/yourdb"  # if not already in .env
  *   node scripts/seedUsers.js
  *
- * Accounts created (adjust emails/passwords as needed):
+ * Accounts created (adjust as needed):
  *   Administrator: admin@example.com / Admin!2025Secure
  *   Manager: manager@example.com / Manager!2025Secure
  *   Guest: guest@example.com / Guest!2025Secure
+ *   Security Q/A required by UserModel are included for each user.
  *
  * Passwords comply with current policy (length >= minLength, upper, lower, digit, special, no spaces).
  */
@@ -30,9 +31,27 @@ async function run() {
   console.log('Connected.');
 
   const sampleUsers = [
-    { email: 'admin@example.com', password: 'Admin!2025Secure', role: 'Administrator' },
-    { email: 'manager@example.com', password: 'Manager!2025Secure', role: 'Manager' },
-    { email: 'guest@example.com', password: 'Guest!2025Secure', role: 'Guest' }
+    { 
+      email: 'admin@example.com', 
+      password: 'Admin!2025Secure', 
+      role: 'Administrator',
+      securityQuestion: 'What is your favorite color?',
+      securityAnswer: 'Blue'
+    },
+    { 
+      email: 'manager@example.com', 
+      password: 'Manager!2025Secure', 
+      role: 'Manager',
+      securityQuestion: 'What is your favorite color?',
+      securityAnswer: 'Green'
+    },
+    { 
+      email: 'guest@example.com', 
+      password: 'Guest!2025Secure', 
+      role: 'Guest',
+      securityQuestion: 'What is your favorite color?',
+      securityAnswer: 'Yellow'
+    }
   ];
 
   const policySummary = describePolicy();
