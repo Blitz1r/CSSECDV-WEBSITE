@@ -46,17 +46,20 @@ module.exports = {
 function enforceAction(req, res, resourceName, action, ownerId, actionLabel = `${action} ${resourceName}`) {
   const policy = accessPolicy[resourceName];
   if (!policy) {
-    return deny(req, res, 500, 'Policy configuration error', `No policy for resource ${resourceName}`);
+    deny(req, res, 500, 'Policy configuration error', `No policy for resource ${resourceName}`);
+    return false;
   }
   const role = userRole(req);
   const uid = userId(req);
   if (!uid) {
-    return deny(req, res, 401, 'Authentication required', 'Unauthenticated access attempt');
+    deny(req, res, 401, 'Authentication required', 'Unauthenticated access attempt');
+    return false;
   }
   // Determine if ownership variant applies
   let allowedRoles = policy[action];
   if (!allowedRoles) {
-    return deny(req, res, 403, 'Forbidden', `Action '${action}' not permitted`, { resource: resourceName });
+    deny(req, res, 403, 'Forbidden', `Action '${action}' not permitted`, { resource: resourceName });
+    return false;
   }
   if (ownerId && ownerId.toString() === uid && policy[`${action}Own`]) {
     // Prefer Own variant if role matches
@@ -72,7 +75,9 @@ function enforceAction(req, res, resourceName, action, ownerId, actionLabel = `$
   // Ownership fallback for Guests trying to perform elevated action
   if (ownerId && ownerId.toString() === uid) {
     // If they own but role not in elevated list and no Own variant matched earlier
-    return deny(req, res, 403, 'Forbidden', 'Not permitted for role', { resource: resourceName, action });
+    deny(req, res, 403, 'Forbidden', 'Not permitted for role', { resource: resourceName, action });
+    return false;
   }
-  return deny(req, res, 403, 'Forbidden', 'Role lacks permission', { resource: resourceName, action });
+  deny(req, res, 403, 'Forbidden', 'Role lacks permission', { resource: resourceName, action });
+  return false;
 }
