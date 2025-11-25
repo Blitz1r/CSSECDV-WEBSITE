@@ -32,7 +32,7 @@ const SalesReports = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${config.API_URL}/api/orders`);
+            const response = await fetch(`${config.API_URL}/api/orders`, { credentials: 'include' });
             const data = await response.json();
             setSalesData(data);
             
