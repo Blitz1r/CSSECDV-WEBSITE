@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema({
     securityAnswer: { type: String, required: true },
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
-    lastPasswordChange: { type: Date, default: null }
+    lastPasswordChange: { type: Date, default: null },
+    lastUseAt: { type: Date, default: null }, // last successful or failed attempt
+    lastSuccessfulLoginAt: { type: Date, default: null },
+    lastFailedLoginAt: { type: Date, default: null }
 }, { timestamps: true });
 
 // Helper to check if account is currently locked

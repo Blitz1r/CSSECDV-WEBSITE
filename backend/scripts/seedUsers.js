@@ -37,7 +37,10 @@ async function run() {
       role: 'Administrator',
       securityQuestion: 'What is your favorite color?',
       securityAnswer: 'Blue',
-      lastPasswordChange: new Date(Date.now() - 48 * 3600000) // 48h ago
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000), // 48h ago
+      lastUseAt: new Date(Date.now() - 6 * 3600000), // simulate last use 6h ago
+      lastSuccessfulLoginAt: new Date(Date.now() - 6 * 3600000),
+      lastFailedLoginAt: null
     },
     { 
       email: 'manager@example.com', 
@@ -45,7 +48,10 @@ async function run() {
       role: 'Manager',
       securityQuestion: 'What is your favorite color?',
       securityAnswer: 'Green',
-      lastPasswordChange: new Date(Date.now() - 48 * 3600000)
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000),
+      lastUseAt: new Date(Date.now() - 12 * 3600000), // 12h ago
+      lastSuccessfulLoginAt: new Date(Date.now() - 12 * 3600000),
+      lastFailedLoginAt: null
     },
     { 
       email: 'guest@example.com', 
@@ -53,7 +59,10 @@ async function run() {
       role: 'Guest',
       securityQuestion: 'What is your favorite color?',
       securityAnswer: 'Yellow',
-      lastPasswordChange: new Date(Date.now() - 48 * 3600000)
+      lastPasswordChange: new Date(Date.now() - 48 * 3600000),
+      lastUseAt: new Date(Date.now() - 24 * 3600000), // 24h ago
+      lastSuccessfulLoginAt: new Date(Date.now() - 24 * 3600000),
+      lastFailedLoginAt: null
     }
   ];
 

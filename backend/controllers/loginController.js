@@ -83,12 +83,17 @@ const loginUser = async (req, res) => {
             if (user.failedLoginAttempts >= MAX_LOGIN_ATTEMPTS) {
                 user.lockUntil = new Date(Date.now() + LOCK_TIME_MS);
                 user.failedLoginAttempts = 0; // reset counter after locking
+                user.lastFailedLoginAt = new Date();
+                user.lastUseAt = new Date();
                 await user.save();
                 await addLog({ eventType: 'auth_attempt', action: 'Account locked after max failures', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { maxAttempts: MAX_LOGIN_ATTEMPTS } });
                 return res.status(423).json({ success: false, message: 'Account locked due to too many failed attempts. Try again later.' });
             } else {
                 await user.save();
                 await addLog({ eventType: 'auth_attempt', action: 'Login failed: bad password', level: 'SECURITY', userEmail: user.email, userId: user._id.toString(), meta: { failedLoginAttempts: user.failedLoginAttempts } });
+                user.lastFailedLoginAt = new Date();
+                user.lastUseAt = new Date();
+                await user.save();
                 return res.status(401).json({ success: false, message: 'Invalid email or password' });
             }
         }
@@ -201,7 +206,8 @@ const sessionInfo = (req, res) => {
         user: {
             email: req.session.email,
             role: req.session.role || 'Guest'
-        }
+        },
+        previousLastUseAt: req.session.previousLastUseAt || null
     });
 };
 
@@ -223,12 +229,20 @@ const verifySecurityAnswer = async (req, res) => {
             await addLog({ eventType: 'auth_attempt', action: 'Security question failed', level: 'SECURITY', userEmail: user.email, userId: user._id.toString()});
             return res.status(401).json({ success: false, message: 'Incorrect security answer' });
         }
+        // Capture previous last use BEFORE updating
+        const previousLastUse = user.lastUseAt ? user.lastUseAt.toISOString() : null;
+        // Update timestamps
+        const now = new Date();
+        user.lastSuccessfulLoginAt = now;
+        user.lastUseAt = now;
+        await user.save();
         // Establish session now
         req.session.userId = user._id.toString();
         req.session.email = user.email;
         req.session.role = user.role;
-        await addLog({ eventType: 'auth_attempt', action: 'Login successful', level: 'INFO', userEmail: user.email, userId: user._id.toString() });
-        return res.json({ success: true, user: { email: user.email, role: user.role } });
+        req.session.previousLastUseAt = previousLastUse;
+        await addLog({ eventType: 'auth_attempt', action: 'Login successful', level: 'INFO', userEmail: user.email, userId: user._id.toString(), meta: { previousLastUse } });
+        return res.json({ success: true, user: { email: user.email, role: user.role }, previousLastUseAt: previousLastUse });
     } catch (error) {
         console.error('Security verification error:', error);
         await addLog({ eventType: 'error', action: 'Security verification exception', level: 'ERROR', meta: { message: error.message } });
