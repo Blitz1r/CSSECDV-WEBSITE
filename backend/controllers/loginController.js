@@ -6,6 +6,7 @@ const { validatePassword, describePolicy } = require('../utils/passwordPolicy');
 // Account lockout configuration
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10);
 const LOCK_TIME_MINUTES = parseInt(process.env.LOCK_TIME_MINUTES || '15', 10);
+const PASSWORD_HISTORY_LIMIT= parseInt(process.env.PASSWORD_HISTORY_LIMIT || '5', 10)
 const LOCK_TIME_MS = LOCK_TIME_MINUTES * 60 * 1000;
 
 // In-memory pending map: token -> { userId, expires }
@@ -53,11 +54,22 @@ const loginUser = async (req, res) => {
             // Already hashed
             passwordMatches = await bcrypt.compare(password, user.password);
         } else {
-            // Plaintext legacy password; compare directly then upgrade to hash
+            // Plaintext legacy password; compare directly then upgrade to hash and initialize history
             if (password === user.password) {
                 passwordMatches = true;
                 const hashed = await bcrypt.hash(password, 10);
                 user.password = hashed;
+                if (!user.passwordHistory) {
+                    user.passwordHistory = [];
+                }
+                if (!user.passwordHistory.includes(hashed)) {
+                    user.passwordHistory.unshift(hashed);
+                }
+                // Trim history to limit if env var set (mirrors model constant)
+                const limit = PASSWORD_HISTORY_LIMIT;
+                if (user.passwordHistory.length > limit) {
+                    user.passwordHistory = user.passwordHistory.slice(0, limit);
+                }
                 await user.save();
             }
         }
@@ -118,8 +130,29 @@ const resetPassword = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'No account found with that email' });
         }
-        const hashed = await bcrypt.hash(password, 10);
-        user.password = hashed;
+        // Prevent password reuse against current and history
+        if (await user.isPasswordReused(password)) {
+            return res.status(400).json({ message: 'Cannot reuse a previous password. Choose a new one.', policy: describePolicy() });
+        }
+        const oldHash = user.password && user.password.startsWith('$2') ? user.password : null;
+        const newHash = await bcrypt.hash(password, 10);
+        // Maintain history (store old hash if exists and not already stored)
+        if (oldHash) {
+            if (!user.passwordHistory) user.passwordHistory = [];
+            if (!user.passwordHistory.includes(oldHash)) {
+                user.passwordHistory.unshift(oldHash);
+            }
+        }
+        user.password = newHash;
+        if (!user.passwordHistory) user.passwordHistory = [];
+        // Optionally also track new hash for future comparisons (not required if checking current password separately)
+        if (!user.passwordHistory.includes(newHash)) {
+            user.passwordHistory.unshift(newHash);
+        }
+        const limit = parseInt(process.env.PASSWORD_HISTORY_LIMIT || '5', 10);
+        if (user.passwordHistory.length > limit) {
+            user.passwordHistory = user.passwordHistory.slice(0, limit);
+        }
         await user.save();
         return res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {

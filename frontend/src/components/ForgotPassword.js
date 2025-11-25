@@ -38,7 +38,7 @@ const ForgotPassword = () => {
         }
 
         // Client-side policy hint (server is source of truth)
-        const minLen = Number(process.env.REACT_APP_PASSWORD_MIN_LENGTH) || 12;
+        const minLen = Number(process.env.PASSWORD_MIN_LENGTH) || 8;
         const hasUpper = /[A-Z]/.test(password);
         const hasLower = /[a-z]/.test(password);
         const hasDigit = /[0-9]/.test(password);
