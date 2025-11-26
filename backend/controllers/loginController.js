@@ -253,7 +253,7 @@ const verifySecurityAnswer = async (req, res) => {
     try {
         const userId = consumeSecurityToken(token);
         if (!userId) {
-            return res.status(400).json({ success: false, message: 'Invalid' });
+            return res.status(400).json({ success: false, message: 'Invalid Re-Enter Username and Password' });
         }
         const user = await User.findById(userId);
         if (!user) {
