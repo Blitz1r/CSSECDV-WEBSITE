@@ -223,7 +223,7 @@ const createUser = async (req, res) => {
             email,
             password: hashedPassword,
             role,
-            securityQuestion: 'What is the Most memorable moment?',
+            securityQuestion: 'What is your most memorable moment?',
             securityAnswer,
             passwordHistory: [hashedPassword],
             lastPasswordChange: new Date()
@@ -263,7 +263,90 @@ const createUser = async (req, res) => {
         });
     }
 };
+const createPublicUser = async (req, res) => {
+    try {
+        const { email, password, securityAnswer } = req.body;
 
+        // Validate required fields
+        if (!email || !password || !securityAnswer) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'All fields are required: email, password, securityAnswer' 
+            });
+        }
+        // Validate password policy
+        const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Password must be 6+ chars and contain a number and special character (!@#$%^&*)' 
+            });
+        }
+        const role = 'Guest'; // Default role for public registration
+        // Validate password policy
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.valid) {
+            return res.status(400).json({ 
+                success: false, 
+                message: passwordCheck.errors.join('. ') 
+            });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'User with this email already exists' 
+            });
+        }
+
+        // Create new user with the default security question
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({
+            email,
+            password: hashedPassword,
+            role,
+            securityQuestion: 'What is your most memorable moment?',
+            securityAnswer,
+            passwordHistory: [hashedPassword],
+            lastPasswordChange: new Date()
+        });
+
+        await newUser.save();
+
+        await addLog({ 
+            eventType: 'user_created', 
+            action: `New user created: ${email}`, 
+            level: 'INFO', 
+            userId: req.session?.userId,
+            meta: { newUserId: newUser._id.toString(), role }
+        });
+
+        return res.status(201).json({ 
+            success: true, 
+            message: 'User created successfully',
+            user: {
+                id: newUser._id,
+                email: newUser.email,
+                role: newUser.role,
+                createdAt: newUser.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Create user error:', error);
+        await addLog({ 
+            eventType: 'error', 
+            action: 'Failed to create user', 
+            level: 'ERROR', 
+            meta: { message: error.message } 
+        });
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error: ' + error.message 
+        });
+    }
+};
 // UPDATE user role (Administrator only)
 const updateUserRole = async (req, res) => {
     try {
@@ -383,6 +466,7 @@ module.exports = {
     getUserById,
     createUser,
     updateUserRole,
-    deleteUser
+    deleteUser,
+    createPublicUser,
 };
 

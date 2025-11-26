@@ -45,7 +45,7 @@ function Register() {
         return;
     }
         try {
-            const response = await fetch(`${config.API_URL}/api/login/register`, {
+            const response = await fetch(`${config.API_URL}/api/publicusers`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
