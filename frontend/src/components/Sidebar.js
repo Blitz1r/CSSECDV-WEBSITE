@@ -128,7 +128,7 @@ const Sidebar = () => {
                 </li>
                 )}
                 <li>
-                    <a href="https://www.facebook.com/innovasianenterprise/">
+                    <a href="https://www.facebook.com/innovasianenterprise/" target="_blank" rel="noopener noreferrer">
                         <span className="icon">❓</span>
                         <span className="text">Help/Support</span>
                     </a>
