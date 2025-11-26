@@ -35,7 +35,7 @@ async function run() {
       email: 'admin@example.com', 
       password: 'Admin!2025Secure', 
       role: 'Administrator',
-      securityQuestion: 'What is your favorite color?',
+      securityQuestion: 'What is the Most memorable moment?',
       securityAnswer: 'Blue',
       lastPasswordChange: new Date(Date.now() - 48 * 3600000), // 48h ago
       lastUseAt: new Date(Date.now() - 6 * 3600000), // simulate last use 6h ago
@@ -46,7 +46,7 @@ async function run() {
       email: 'manager@example.com', 
       password: 'Manager!2025Secure', 
       role: 'Manager',
-      securityQuestion: 'What is your favorite color?',
+      securityQuestion: 'What is the Most memorable moment?',
       securityAnswer: 'Green',
       lastPasswordChange: new Date(Date.now() - 48 * 3600000),
       lastUseAt: new Date(Date.now() - 12 * 3600000), // 12h ago
@@ -57,7 +57,7 @@ async function run() {
       email: 'guest@example.com', 
       password: 'Guest!2025Secure', 
       role: 'Guest',
-      securityQuestion: 'What is your favorite color?',
+      securityQuestion: 'What is the Most memorable moment?',
       securityAnswer: 'Yellow',
       lastPasswordChange: new Date(Date.now() - 48 * 3600000),
       lastUseAt: new Date(Date.now() - 24 * 3600000), // 24h ago

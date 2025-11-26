@@ -7,16 +7,7 @@ const MIN_PASSWORD_AGE_HOURS = parseInt(process.env.MIN_PASSWORD_AGE_HOURS || '2
 
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true, validate: {
-            validator: function(value) {
-                // If the password is already hashed (starts with $2b$...), skip validation
-                if (value.startsWith('$2b$')) return true;
-
-                // Otherwise, check for complexity
-                return /^(?=.*[0-9])(?=.*[!@#$%^&*])/.test(value);
-            },
-            message: 'Password must contain at least one number and one special character.'
-        }, minlength: [6, 'Password must at least be 6 characters'] },
+    password: { type: String, required: true },
     // Stores previous password hashes (most recent first, excluding current if desired)
     passwordHistory: { type: [String], default: [] },
     role: {
