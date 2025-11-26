@@ -56,7 +56,10 @@ userSchema.pre('save', async function (next) {
             if (this.passwordHistory.length > PASSWORD_HISTORY_LIMIT) {
                 this.passwordHistory = this.passwordHistory.slice(0, PASSWORD_HISTORY_LIMIT);
             }
-            this.lastPasswordChange = new Date();
+            // Only set lastPasswordChange if not explicitly provided (allows seeding with custom dates)
+            if (!this.lastPasswordChange) {
+                this.lastPasswordChange = new Date();
+            }
         } catch (err) {
             return next(err);
         }

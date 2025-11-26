@@ -36,7 +36,7 @@ const ResetPassword = () => {
         
 
         // Client-side policy validation
-        const minLen = Number(process.env.REACT_APP_PASSWORD_MIN_LENGTH) || 6;
+        const minLen = Number(process.env.REACT_APP_PASSWORD_MIN_LENGTH) || 8;
         const hasUpper = /[A-Z]/.test(password);
         const hasLower = /[a-z]/.test(password);
         const hasDigit = /[0-9]/.test(password);
