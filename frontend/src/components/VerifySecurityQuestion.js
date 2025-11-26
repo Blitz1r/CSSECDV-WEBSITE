@@ -60,7 +60,6 @@ function VerifySecurityQuestion() {
                 <div className="login-form">
                     <h2>Security Question</h2>
                     <p>{securityQuestion}</p>
-                    {error && <div className="error-message">{error}</div>}
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"
@@ -75,6 +74,12 @@ function VerifySecurityQuestion() {
                     </form>
                 </div>
             </div>
+            {error && (
+                <div className="error-popup active">
+                    <p>{error}</p>
+                    <button onClick={() => setError('')}>Close</button>
+                </div>
+            )}
         </div>
     );
 }

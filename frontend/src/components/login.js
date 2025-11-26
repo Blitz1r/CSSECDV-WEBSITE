@@ -55,6 +55,10 @@ const Login = () => {
         e.preventDefault(); // Prevent default behavior
         navigate('/forgot-password'); // Navigate to forgot password page
     };
+    const handleRegister = (e) => {
+        e.preventDefault(); // Prevent default behavior
+        navigate('/register'); // Navigate to forgot password page
+    };
 
     return (
         <div className="login-container">
@@ -76,7 +80,7 @@ const Login = () => {
                             {loading ? 'Logging in...' : 'Login Now'}
                         </button>
                     </form>
-
+                <span className='centered flex-row'>
                     <a 
                         href="/forgot-password" 
                         onClick={handleForgotPassword} 
@@ -84,6 +88,14 @@ const Login = () => {
                     >
                         Forgot Password?
                     </a>
+                    <a 
+                        href="/register" 
+                        onClick={handleRegister} 
+                        className="create-account"
+                    >
+                        Create Account
+                    </a>
+                </span>
                 </div>
                 
             </div>
