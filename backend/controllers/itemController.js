@@ -2,13 +2,33 @@
 const Item = require('../models/ItemModel');
 const Transaction = require('../models/TransactionModel');
 const { guestFilterQuery, enforceAction } = require('../middleware/authorization');
+const { addLog } = require('./loggerController');
 
 const LOW_STOCK_THRESHOLD = 10;
 const NO_STOCK_THRESHOLD = 0;
 
 // Add a new item
 const addItem = async (req, res) => {
-    const { itemName, category, price, description, quantity } = req.body;
+    const { itemName, category, description } = req.body;
+    let { price, quantity } = req.body;
+
+    // Convert string inputs to numbers if needed
+    if (typeof price === 'string') price = parseFloat(price);
+    if (typeof quantity === 'string') quantity = parseInt(quantity, 10);
+
+    // Input validation with logging
+    if (!itemName || typeof itemName !== 'string' || itemName.trim().length === 0) {
+        await addLog({ eventType: 'validation_failure', action: 'Item creation: invalid itemName', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { field: 'itemName' } });
+        return res.status(400).json({ message: 'Item name is required' });
+    }
+    if (price === undefined || isNaN(price) || price < 0) {
+        await addLog({ eventType: 'validation_failure', action: 'Item creation: invalid price', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { field: 'price', value: req.body.price } });
+        return res.status(400).json({ message: 'Valid price is required' });
+    }
+    if (quantity === undefined || isNaN(quantity) || quantity < 0 || !Number.isInteger(quantity)) {
+        await addLog({ eventType: 'validation_failure', action: 'Item creation: invalid quantity', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { field: 'quantity', value: req.body.quantity } });
+        return res.status(400).json({ message: 'Valid quantity is required' });
+    }
 
     try {
         // Determine initial status based on quantity
@@ -40,7 +60,9 @@ const addItem = async (req, res) => {
 
         res.status(201).json({ message: 'Item added successfully', newItem });
     } catch (error) {
-        res.status(500).json({ message: 'Error adding item', error });
+        console.error('Error adding item:', error);
+        await addLog({ eventType: 'error', action: 'Item creation failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error adding item' });
     }
 };
 
@@ -50,7 +72,9 @@ const getItems = async (req, res) => {
         const items = await Item.find(guestFilterQuery(req));
         res.status(200).json(items);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching items', error });
+        console.error('Error fetching items:', error);
+        await addLog({ eventType: 'error', action: 'Fetch items failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error fetching items' });
     }
 };
 
@@ -84,7 +108,8 @@ const updateItem = async (req, res) => {
         res.status(200).json({ message: 'Item updated successfully', updatedItem });
     } catch (error) {
         console.error('Error updating item:', error);
-        res.status(500).json({ message: 'Error updating item', error });
+        await addLog({ eventType: 'error', action: 'Item update failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error updating item' });
     }
 };
 
@@ -113,7 +138,9 @@ const deleteItem = async (req, res) => {
 
         res.status(200).json({ message: 'Item deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting item', error });
+        console.error('Error deleting item:', error);
+        await addLog({ eventType: 'error', action: 'Item deletion failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error deleting item' });
     }
 };
 
@@ -161,7 +188,8 @@ const incrementItem = async (req, res) => {
         });
     } catch (error) {
         console.error('Error incrementing item quantity:', error);
-        res.status(500).json({ message: 'Error incrementing item quantity', error });
+        await addLog({ eventType: 'error', action: 'Item increment failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error incrementing item quantity' });
     }
 };
 
@@ -179,6 +207,7 @@ const decrementItem = async (req, res) => {
         if (!enforceAction(req, res, 'Item', 'update', item.owner)) return; // treat quantity change as update
 
         if (item.quantity <= 0) {
+            await addLog({ eventType: 'validation_failure', action: 'Item decrement: quantity already zero', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { itemId: id } });
             return res.status(400).json({ message: 'Cannot decrement. Quantity already at 0.' });
         }
 
@@ -213,7 +242,8 @@ const decrementItem = async (req, res) => {
         });
     } catch (error) {
         console.error('Error decrementing item quantity:', error);
-        res.status(500).json({ message: 'Error decrementing item quantity', error });
+        await addLog({ eventType: 'error', action: 'Item decrement failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
+        res.status(500).json({ message: 'Error decrementing item quantity' });
     }
 };
 

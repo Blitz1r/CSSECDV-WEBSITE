@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAuth } = require('../middleware/authorization');
+const { requireAuth, requireRole } = require('../middleware/authorization');
 const { 
     getAllUsers,
     getManagersAndAdministrators,
@@ -11,49 +11,29 @@ const {
 } = require('../controllers/userController');
 const router = express.Router();
 
+// Apply authentication to all user routes
 router.use(requireAuth);
 
-// Middleware to check if user is Admin
-const isAdministrator = (req, res, next) => {
-    if (!req.session || req.session.role !== 'Administrator') {
-        return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden. Admin access required.' 
-        });
-    }
-    next();
-};
+// GET managers and administrators (Manager or Admin access)
+router.get('/managers-administrators', requireRole('Manager', 'Administrator'), getManagersAndAdministrators);
 
-// Middleware to check if user is Manager or Admin
-const isManagerOrAdministrator = (req, res, next) => {
-    if (!req.session || !['Manager', 'Administrator'].includes(req.session.role)) {
-        return res.status(403).json({ 
-            success: false, 
-            message: 'Forbidden. Manager or Admin access required.' 
-        });
-    }
-    next();
-};
-
-router.get('/managers-administrators',isManagerOrAdministrator, getManagersAndAdministrators);
-
-// GET users by specific role
+// GET users by specific role (Manager or Admin access)
 // Example: /api/users/role/Manager
-router.get('/role/:role', isManagerOrAdministrator, getUsersByRole);
+router.get('/role/:role', requireRole('Manager', 'Administrator'), getUsersByRole);
 
 // CREATE new user (Administrator only)
 // Example: POST /api/users
-router.post('/', isAdministrator, createUser);
+router.post('/', requireRole('Administrator'), createUser);
 
-// GET single user by ID
+// GET single user by ID (Manager or Admin access)
 // Example: /api/users/507f1f77bcf86cd799439011
-router.get('/:id', isManagerOrAdministrator, getUserById);
+router.get('/:id', requireRole('Manager', 'Administrator'), getUserById);
 
 // UPDATE user role (Administrator only)
 // Example: PUT /api/users/507f1f77bcf86cd799439011/role
-router.put('/:id/role', isAdministrator, updateUserRole);
+router.put('/:id/role', requireRole('Administrator'), updateUserRole);
 
 // DELETE user (Administrator only)
 // Example: DELETE /api/users/507f1f77bcf86cd799439011
-router.delete('/:id', isAdministrator, deleteUser);
+router.delete('/:id', requireRole('Administrator'), deleteUser);
 module.exports = router;

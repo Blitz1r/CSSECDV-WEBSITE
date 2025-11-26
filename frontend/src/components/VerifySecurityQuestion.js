@@ -71,6 +71,9 @@ function VerifySecurityQuestion() {
                         <button type="submit" disabled={loading}>
                             {loading ? 'Verifying...' : 'Verify'}
                         </button>
+                        <button type="button" onClick={() => navigate('/')} style={{ marginTop: '10px', background: '#6c757d' }}>
+                            Back to Login
+                        </button>
                     </form>
                 </div>
             </div>

@@ -88,6 +88,7 @@ const getUsersByRole = async (req, res) => {
         const { role } = req.params; // e.g., /users/role/Manager
 
         if (!role) {
+            await addLog({ eventType: 'validation_failure', action: 'Get users by role: missing role parameter', level: 'WARN', userId: req.session?.userId, meta: { field: 'role' } });
             return res.status(400).json({ 
                 success: false, 
                 message: 'Role parameter is required' 
@@ -176,6 +177,7 @@ const createUser = async (req, res) => {
 
         // Validate required fields
         if (!email || !password || !role || !securityAnswer) {
+            await addLog({ eventType: 'validation_failure', action: 'User creation: missing required fields', level: 'WARN', userId: req.session?.userId, meta: { hasEmail: !!email, hasPassword: !!password, hasRole: !!role, hasSecurityAnswer: !!securityAnswer } });
             return res.status(400).json({ 
                 success: false, 
                 message: 'All fields are required: email, password, role, securityAnswer' 
@@ -184,6 +186,7 @@ const createUser = async (req, res) => {
         // Validate password policy
         const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
         if (!passwordRegex.test(password)) {
+            await addLog({ eventType: 'validation_failure', action: 'User creation: password policy failed', level: 'WARN', userId: req.session?.userId, meta: { email } });
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password must be 6+ chars and contain a number and special character (!@#$%^&*)' 
@@ -193,6 +196,7 @@ const createUser = async (req, res) => {
         // Validate role
         const validRoles = ['Administrator', 'Manager'];
         if (!validRoles.includes(role)) {
+            await addLog({ eventType: 'validation_failure', action: 'User creation: invalid role', level: 'WARN', userId: req.session?.userId, meta: { role } });
             return res.status(400).json({ 
                 success: false, 
                 message: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
@@ -202,6 +206,7 @@ const createUser = async (req, res) => {
         // Validate password policy
         const passwordCheck = validatePassword(password);
         if (!passwordCheck.valid) {
+            await addLog({ eventType: 'validation_failure', action: 'User creation: password validation failed', level: 'WARN', userId: req.session?.userId, meta: { email, errors: passwordCheck.errors } });
             return res.status(400).json({ 
                 success: false, 
                 message: passwordCheck.errors.join('. ') 
@@ -259,7 +264,7 @@ const createUser = async (req, res) => {
         });
         return res.status(500).json({ 
             success: false, 
-            message: 'Server error: ' + error.message 
+            message: 'Server error' 
         });
     }
 };
@@ -269,6 +274,7 @@ const createPublicUser = async (req, res) => {
 
         // Validate required fields
         if (!email || !password || !securityAnswer) {
+            await addLog({ eventType: 'validation_failure', action: 'Public user registration: missing required fields', level: 'WARN', meta: { hasEmail: !!email, hasPassword: !!password, hasSecurityAnswer: !!securityAnswer } });
             return res.status(400).json({ 
                 success: false, 
                 message: 'All fields are required: email, password, securityAnswer' 
@@ -277,6 +283,7 @@ const createPublicUser = async (req, res) => {
         // Validate password policy
         const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
         if (!passwordRegex.test(password)) {
+            await addLog({ eventType: 'validation_failure', action: 'Public user registration: password policy failed', level: 'WARN', meta: { email } });
             return res.status(400).json({ 
                 success: false, 
                 message: 'Password must be 6+ chars and contain a number and special character (!@#$%^&*)' 
@@ -286,6 +293,7 @@ const createPublicUser = async (req, res) => {
         // Validate password policy
         const passwordCheck = validatePassword(password);
         if (!passwordCheck.valid) {
+            await addLog({ eventType: 'validation_failure', action: 'Public user registration: password validation failed', level: 'WARN', meta: { email, errors: passwordCheck.errors } });
             return res.status(400).json({ 
                 success: false, 
                 message: passwordCheck.errors.join('. ') 
@@ -343,7 +351,7 @@ const createPublicUser = async (req, res) => {
         });
         return res.status(500).json({ 
             success: false, 
-            message: 'Server error: ' + error.message 
+            message: 'Server error' 
         });
     }
 };
@@ -355,6 +363,7 @@ const updateUserRole = async (req, res) => {
 
         const validRoles = ['Administrator', 'Manager'];
         if (!validRoles.includes(role)) {
+            await addLog({ eventType: 'validation_failure', action: 'Update user role: invalid role', level: 'WARN', userId: req.session?.userId, meta: { role } });
             return res.status(400).json({ 
                 success: false, 
                 message: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
