@@ -6,83 +6,41 @@ import '../styles/forgot-password.css';
 import config from '../config';
 
 const ForgotPassword = () => {
-    const [error, setError] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setLoading(true);
-        setError(false);
-        setSuccess(false);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setErrorMessage('');
-
-        // Basic validation
-        if (!email || !password) {
-            setError(true);
-            setErrorMessage('Please fill in all fields');
-            setLoading(false);
+        
+        if (!email) {
+            setErrorMessage('Please enter your email.');
             return;
         }
-
-        if (password !== confirmPassword) {
-            setError(true);
-            setErrorMessage('Passwords do not match');
-            setLoading(false);
-            return;
-        }
-
-        // Client-side policy hint (server is source of truth)
-        const minLen = Number(process.env.PASSWORD_MIN_LENGTH) || 8;
-        const hasUpper = /[A-Z]/.test(password);
-        const hasLower = /[a-z]/.test(password);
-        const hasDigit = /[0-9]/.test(password);
-        const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password);
-        const hasSpace = /\s/.test(password);
-        if (password.length < minLen) {
-            setError(true);
-            setErrorMessage(`Password must be ${minLen}+ chars long.`);
-            setLoading(false);
-            return;
-        }
-        if (password.length < minLen || !hasUpper || !hasLower || !hasDigit || !hasSpecial || hasSpace) {
-            setError(true);
-            setErrorMessage(`Password must include uppercase, lowercase, digit, special, and no spaces.`);
-            setLoading(false);
-            return;
-        }
-
+        
+        setLoading(true);
         try {
-            console.log('Attempting password reset for:', email);
-            const response = await fetch(`${config.API_URL}/api/login/reset-password`, { // Updated endpoint
+            const response = await fetch(`${config.API_URL}/api/login/request-security`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+                credentials: 'include',
             });
             
-            console.log('Response status:', response.status);
             const data = await response.json();
-            console.log('Response data:', data);
-
-            if (response.ok) {
-                setSuccess(true);
-                setTimeout(() => {
-                    navigate('/'); // Redirect to login page after 2 seconds
-                }, 2000);
+            
+            if (response.ok && data.success && data.token) {
+                // Store token and email in sessionStorage for next step
+                sessionStorage.setItem('resetToken', data.token);
+                sessionStorage.setItem('resetEmail', email);
+                navigate('/verify-security-forgot');
             } else {
-                setError(true);
-                setErrorMessage(data.message || 'Failed to reset password');
+                setErrorMessage(data.message || 'Unable to find account with that email.');
             }
         } catch (err) {
-            console.error('Reset password error:', err);
-            setError(true);
+            console.error('Request security error:', err);
             setErrorMessage('Network error. Please try again.');
         } finally {
             setLoading(false);
@@ -97,39 +55,25 @@ const ForgotPassword = () => {
                     <p>Reset your password to regain access to your account.</p>
                 </div>
             </div>
-            
+
             <div className="form-section">
                 <div className="forgot-password-form">
                     <h2>Reset Password</h2>
-                    <p>Enter your email and new password below.</p>
+                    <p>Enter your account email to proceed.</p>
                     
                     <form onSubmit={handleSubmit}>
-                        <input 
-                            type="email" 
-                            value={email} 
-                            onChange={(e) => setEmail(e.target.value)} 
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email"
                             required
                         />
-                        <input 
-                            type="password" 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder="New Password"
-                            required
-                        />
-                        <input 
-                            type="password" 
-                            value={confirmPassword} 
-                            onChange={(e) => setConfirmPassword(e.target.value)} 
-                            placeholder="Confirm New Password"
-                            required
-                        />
                         <button type="submit" disabled={loading}>
-                            {loading ? 'Resetting...' : 'Reset Password'}
+                            {loading ? 'Finding Account...' : 'Next'}
                         </button>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={() => navigate('/')}
                             className="back-button"
                         >
@@ -139,16 +83,10 @@ const ForgotPassword = () => {
                 </div>
             </div>
 
-            {error && (
+            {errorMessage && (
                 <div className="error-popup active">
                     <p>{errorMessage}</p>
-                    <button onClick={() => setError(false)}>Close</button>
-                </div>
-            )}
-
-            {success && (
-                <div className="success-popup active">
-                    <p>Password reset successful! Redirecting to login...</p>
+                    <button onClick={() => setErrorMessage('')}>Close</button>
                 </div>
             )}
         </div>

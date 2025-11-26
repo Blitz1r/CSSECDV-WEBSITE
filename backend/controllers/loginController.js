@@ -210,16 +210,50 @@ const sessionInfo = (req, res) => {
         previousLastUseAt: req.session.previousLastUseAt || null
     });
 };
+const requestSecurity = async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email required' });
+    
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        
+        // Generate token
+        const token = createSecurityToken(user._id.toString());
+        return res.json({ success: true, token, message: 'Security check initiated' });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+const getSecurityQuestion = async (req, res) => {
+    // Frontend sends GET /?email=... so we look in req.query
+    const email = req.query.email || req.body.email; 
 
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    try {
+        // Just look up the user. DO NOT consume the token here.
+        const user = await User.findOne({ email });
+        if (!user) {   
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        return res.json({ success: true, securityQuestion: user.securityQuestion });
+    } catch (error) {
+        console.error('Get security question error:', error);
+        return res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+        
 const verifySecurityAnswer = async (req, res) => {
     const { token, answer } = req.body;
     if (!token || !answer) {
-        return res.status(400).json({ success: false, message: 'Token and answer are required' });
+        return res.status(400).json({ success: false, message: 'Email and answer are required' });
     }
     try {
         const userId = consumeSecurityToken(token);
         if (!userId) {
-            return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+            return res.status(400).json({ success: false, message: 'Invalid' });
         }
         const user = await User.findById(userId);
         if (!user) {
@@ -249,11 +283,56 @@ const verifySecurityAnswer = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+const verifySecurityAnswerForgot = async (req, res) => {
+    const { token, answer } = req.body;
+    if (!token || !answer) return res.status(400).json({ success: false, message: 'Required fields missing' });
+
+    try {
+        const userId = consumeSecurityToken(token); // Deletes old token
+        if (!userId) return res.status(400).json({ success: false, message: 'Session expired. Please start over.' });
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        // Check Answer
+        if (String(user.securityAnswer).trim().toLowerCase() !== String(answer).trim().toLowerCase()) {
+            await addLog({ eventType: 'auth_attempt', action: 'Security failed', level: 'WARN', userEmail: user.email });
+            
+            // IMPORTANT: Generate NEW token so user can try again
+            const newToken = createSecurityToken(user._id.toString());
+            
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Incorrect answer',
+                newToken: newToken // Frontend needs this
+            });
+        }
+
+        // Success - Update User & Session
+        const now = new Date();
+        user.lastSuccessfulLoginAt = now;
+        user.lastUseAt = now;
+        await user.save();
+        
+        // Allow password reset or login
+        req.session.userId = user._id.toString();
+        req.session.email = user.email;
+        req.session.role = user.role;
+        
+        return res.json({ success: true, user: { email: user.email } });
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 module.exports = { 
     loginUser,
     resetPassword,
     logoutUser,
     sessionInfo,
-    verifySecurityAnswer
+    verifySecurityAnswer,
+    getSecurityQuestion,
+    requestSecurity,
+    verifySecurityAnswerForgot
 };

@@ -15,6 +15,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Register from './components/Register';
 import ViewLogs from './components/ViewLogs';
 import VerifySecurityQuestion from './components/VerifySecurityQuestion';
+import VerifySecurityQuestionForgot from './components/VerifySecurityQuestionforgot';
+import ResetPassword from './components/ResetPassword';
 function App() {
     useEffect(() => {
         const darkMode = localStorage.getItem('darkMode');
@@ -40,6 +42,8 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-security" element={<VerifySecurityQuestion />} />
+                    <Route path="/verify-security-forgot" element={<VerifySecurityQuestionForgot />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                 </Routes>
             </ErrorBoundary>

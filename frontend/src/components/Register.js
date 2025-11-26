@@ -11,7 +11,6 @@ function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [securityQuestion, setSecurityQuestion] = useState('');
     const [securityAnswer, setSecurityAnswer] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
@@ -24,7 +23,7 @@ function Register() {
         setErrorMessage('');
 
         // Validation
-        if (!email || !password || !confirmPassword || !securityQuestion || !securityAnswer) {
+        if (!email || !password || !confirmPassword || !securityAnswer) {
             setError(true);
             setErrorMessage('All fields are required');
             setLoading(false);
@@ -41,7 +40,7 @@ function Register() {
 
     if (!passwordRegex.test(password)) {
         setError(true);
-        setErrorMessage('Password must be 6+ chars and contain a number and special character (!@#$%^&*)');
+        setErrorMessage('Password must be 6+ chars and contain a number and special character');
         setLoading(false);
         return;
     }
@@ -54,7 +53,6 @@ function Register() {
                 body: JSON.stringify({
                     email,
                     password,
-                    securityQuestion,
                     securityAnswer,
                 }),
             });
@@ -120,7 +118,7 @@ function Register() {
                             type="text"
                             value={securityAnswer}
                             onChange={(e) => setSecurityAnswer(e.target.value)}
-                            placeholder="What is your favorite hiking trail?"
+                            placeholder="Most Memorable Moment? (User Question)"
                             required
                         />
                         <button type="submit" disabled={loading}>
