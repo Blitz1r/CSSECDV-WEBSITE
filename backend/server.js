@@ -10,7 +10,7 @@ const orderRoutes = require('./routes/orders');
 const itemRoutes = require('./routes/items');  // Add the item routes
 const categoryRoutes = require('./routes/category');
 const Item = require('./models/ItemModel'); // Import Item model for update route
-
+const userRoutes = require('./routes/users');
 // express app
 const app = express();
 
@@ -69,7 +69,7 @@ app.use('/api/items', itemRoutes);  // Add items route
 app.use('/api/transactions', require('./routes/transaction'));
 app.use('/api/categories', categoryRoutes);
 app.use('/api/logs', require('./routes/logs'));
-
+app.use('/api/users', userRoutes);
 // connect to MongoDB using the connection string in .env
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {

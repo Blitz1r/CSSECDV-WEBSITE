@@ -119,6 +119,14 @@ const Sidebar = () => {
                     </Link>
                 </li>
                 )}
+                {role === 'Administrator' && (
+                <li>
+                    <Link to="/users" title="Users">
+                        <span className="icon">👥</span>
+                        <span className="text">Users</span>
+                    </Link>
+                </li>
+                )}
                 <li>
                     <a href="#">
                         <span className="icon">❓</span>

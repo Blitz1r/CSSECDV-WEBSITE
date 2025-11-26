@@ -16,6 +16,7 @@ import Register from './components/Register';
 import ViewLogs from './components/ViewLogs';
 import VerifySecurityQuestion from './components/VerifySecurityQuestion';
 import VerifySecurityQuestionForgot from './components/VerifySecurityQuestionforgot';
+import ViewUsers from './components/ViewUsers';
 import ResetPassword from './components/ResetPassword';
 function App() {
     useEffect(() => {
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/reports/sales" element={<ProtectedRoute><SalesReports /></ProtectedRoute>} />
                     <Route path="/reports/inventory" element={<ProtectedRoute><InventoryReports /></ProtectedRoute>} />
                     <Route path="/logs" element={<ProtectedRoute roles={['Administrator']}><ViewLogs /></ProtectedRoute>} />
+                    <Route path="/users" element={<ProtectedRoute roles={['Administrator']}><ViewUsers /></ProtectedRoute>} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/verify-security" element={<VerifySecurityQuestion />} />
