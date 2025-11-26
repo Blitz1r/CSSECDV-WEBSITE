@@ -387,6 +387,7 @@ const Inventory = () => {
                                     onChange={handleChange}
                                     placeholder="Item Name"
                                     minLength="3"
+                                    maxLength="20"
                                     required
                                 />
                             </div>
@@ -457,6 +458,7 @@ const Inventory = () => {
                                     onChange={handleChange}
                                     placeholder="Description"
                                     minLength="3"
+                                    maxLength="20"
                                     required
                                 />
                             </div>

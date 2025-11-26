@@ -61,6 +61,7 @@ const OrderForm = ({ onSubmit }) => {
         onChange={handleChange}
         placeholder="Item Name"
         minLength="3"
+        maxLength="20"
         required
       />
       <input

@@ -44,6 +44,7 @@ const AddItem = () => {
           description: '',
         });
       } else {
+        
         console.error('Error adding item:', response.statusText);
       }
     } catch (error) {
