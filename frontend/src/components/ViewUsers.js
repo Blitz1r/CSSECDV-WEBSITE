@@ -76,13 +76,6 @@ const ViewUsers = () => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
-        const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
-        
-        if (!passwordRegex.test(newUser.password)) {
-            // Your component uses 'setError' (string), not 'setErrorMessage'
-            setError('Password must be 6+ chars and contain a number and special character (!@#$%^&*)');
-            return; // Stop the function here
-        }
         
         try {
             const response = await fetch(`${config.API_URL}/api/users`, {

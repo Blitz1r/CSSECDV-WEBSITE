@@ -36,14 +36,7 @@ function Register() {
             setLoading(false);
             return;
         }
-    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
 
-    if (!passwordRegex.test(password)) {
-        setError(true);
-        setErrorMessage('Password must be 6+ chars and contain a number and special character');
-        setLoading(false);
-        return;
-    }
         try {
             const response = await fetch(`${config.API_URL}/api/publicusers`, {
                 method: 'POST',
