@@ -180,7 +180,7 @@ const resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Password reset error:', error);
         await addLog({ eventType: 'error', action: 'Password reset controller exception', level: 'ERROR', meta: { message: error.message } });
-        return res.status(500).json({ message: `Server error: ${error.message}` });
+        return res.status(500).json({ message: 'Server error' });
     }
 };
 

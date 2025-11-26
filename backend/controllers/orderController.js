@@ -1,16 +1,33 @@
 const { Order } = require('../models/OrderModel');
 const Transaction = require('../models/TransactionModel');
 const { guestFilterQuery, enforceAction } = require('../middleware/authorization');
+const { addLog } = require('./loggerController');
 
 // Controller function to handle adding an order
 const addOrderHandler = async (req, res) => {
-    const { orderID, itemName, status, price, date } = req.body;
+    const { orderID, itemName, status, date } = req.body;
+    let { price } = req.body;
+
+    // Convert string input to number if needed
+    if (typeof price === 'string') price = parseFloat(price);
+
+    if (!itemName || typeof itemName !== 'string' || itemName.trim().length === 0) {
+        await addLog({ eventType: 'validation_failure', action: 'Order creation: invalid itemName', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { field: 'itemName' } });
+        return res.status(400).json({ message: 'Item name is required' });
+    }
+    if (price === undefined || isNaN(price) || price < 0) {
+        await addLog({ eventType: 'validation_failure', action: 'Order creation: invalid price', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { field: 'price', value: req.body.price } });
+        return res.status(400).json({ message: 'Valid price is required' });
+    }
+
     try {
         if (!enforceAction(req, res, 'Order', 'create')) return;
         const createdOrder = await Order.create({ orderID, itemName, status, price, date, owner: req.session.userId });
         await Transaction.create({ name: itemName, action: 'was ordered.' });
         res.status(201).json(createdOrder);
     } catch (error) {
+        console.error('Error adding order:', error);
+        await addLog({ eventType: 'error', action: 'Order creation failed', level: 'ERROR', userEmail: req.session?.email, userId: req.session?.userId, meta: { message: error.message } });
         res.status(500).json({ message: 'Error adding order' });
     }
 };
