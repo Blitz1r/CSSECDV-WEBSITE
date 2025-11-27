@@ -10,6 +10,13 @@ const ViewUsers = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     
+    // Security popup state
+    const [showSecurityPopup, setShowSecurityPopup] = useState(false);
+    const [securityAnswer, setSecurityAnswer] = useState('');
+    const [securityError, setSecurityError] = useState('');
+    const [pendingAction, setPendingAction] = useState(null);
+    const [isVerified, setIsVerified] = useState(false);
+    
     // Form state for creating new user
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [newUser, setNewUser] = useState({
@@ -54,13 +61,60 @@ const ViewUsers = () => {
         }
     };
 
+    const verifySecurityAnswer = async () => {
+        if (!securityAnswer.trim()) {
+            setSecurityError('Please enter an answer');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${config.API_URL}/api/login/verify-access`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ answer: securityAnswer })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setIsVerified(true);
+                setShowSecurityPopup(false);
+                setSecurityAnswer('');
+                setSecurityError('');
+                
+                // Execute the pending action
+                if (pendingAction) {
+                    pendingAction();
+                    setPendingAction(null);
+                }
+            } else {
+                setSecurityError(data.message || 'Incorrect answer');
+            }
+        } catch (err) {
+            console.error('Security verification error:', err);
+            setSecurityError('Server error. Please try again.');
+        }
+    };
+
+    const requireVerification = (action) => {
+        if (isVerified) {
+            action();
+        } else {
+            setPendingAction(() => action);
+            setShowSecurityPopup(true);
+        }
+    };
+
     const toggleAddNew = () => {
-        setIsAddingNew(!isAddingNew);
-        setNewUser({
-            email: '',
-            password: '',
-            role: 'Manager',
-            securityAnswer: ''
+        requireVerification(() => {
+            setIsAddingNew(!isAddingNew);
+            setNewUser({
+                email: '',
+                password: '',
+                role: 'Manager',
+                securityAnswer: ''
+            });
         });
     };
 
@@ -74,45 +128,50 @@ const ViewUsers = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccessMessage('');
-        
-        try {
-            const response = await fetch(`${config.API_URL}/api/users`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newUser)
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setSuccessMessage('User created successfully!');
-                setShowSuccessPopup(true);
-                setTimeout(() => setShowSuccessPopup(false), 3000);
-                setIsAddingNew(false);
-                setNewUser({
-                    email: '',
-                    password: '',
-                    role: 'Manager',
-                    securityAnswer: ''
+        requireVerification(async () => {
+            setError('');
+            setSuccessMessage('');
+            
+            try {
+                const response = await fetch(`${config.API_URL}/api/users`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newUser)
                 });
-                fetchUsers();
-            } else {
-                setError(data.message || 'Failed to create user');
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setSuccessMessage('User created successfully!');
+                    setShowSuccessPopup(true);
+                    setTimeout(() => setShowSuccessPopup(false), 3000);
+                    setIsAddingNew(false);
+                    setNewUser({
+                        email: '',
+                        password: '',
+                        role: 'Manager',
+                        securityAnswer: ''
+                    });
+                    setIsVerified(false); // Reset verification after action
+                    fetchUsers();
+                } else {
+                    setError(data.message || 'Failed to create user');
+                }
+            } catch (err) {
+                console.error('Create user error:', err);
+                setError('Network error. Please try again.');
             }
-        } catch (err) {
-            console.error('Create user error:', err);
-            setError('Network error. Please try again.');
-        }
+        });
     };
 
     const handleEditClick = (event, user) => {
         event.preventDefault();
-        setEditUserId(user._id);
-        setEditFormData({
-            role: user.role
+        requireVerification(() => {
+            setEditUserId(user._id);
+            setEditFormData({
+                role: user.role
+            });
         });
     };
 
@@ -144,6 +203,7 @@ const ViewUsers = () => {
                 setShowSuccessPopup(true);
                 setTimeout(() => setShowSuccessPopup(false), 3000);
                 handleCancelClick();
+                setIsVerified(false); // Reset verification after action
                 fetchUsers();
             } else {
                 setError(data.message || 'Failed to update role');
@@ -160,41 +220,48 @@ const ViewUsers = () => {
         setEditFormData({ role: '' });
     };
 
-    const handleDeleteClick = async (userId, userEmail) => {
-        if (!window.confirm(`Are you sure you want to delete ${userEmail}? This action cannot be undone.`)) {
-            return;
-        }
+    const handleDeleteClick = (userId, userEmail) => {
+        requireVerification(async () => {
+            if (!window.confirm(`Are you sure you want to delete ${userEmail}? This action cannot be undone.`)) {
+                return;
+            }
 
-        setError('');
-        setSuccessMessage('');
+            setError('');
+            setSuccessMessage('');
 
-        try {
-            // Optimistic update
-            setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+            try {
+                setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
 
-            const response = await fetch(`${config.API_URL}/api/users/${userId}`, {
-                method: 'DELETE',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            });
+                const response = await fetch(`${config.API_URL}/api/users/${userId}`, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok && data.success) {
-                setSuccessMessage('User deleted successfully!');
-                setShowSuccessPopup(true);
-                setTimeout(() => setShowSuccessPopup(false), 3000);
-            } else {
-                setError(data.message || 'Failed to delete user');
-                // Rollback on error
+                if (response.ok && data.success) {
+                    setSuccessMessage('User deleted successfully!');
+                    setShowSuccessPopup(true);
+                    setTimeout(() => setShowSuccessPopup(false), 3000);
+                    setIsVerified(false); // Reset verification after action
+                } else {
+                    setError(data.message || 'Failed to delete user');
+                    fetchUsers();
+                }
+            } catch (err) {
+                console.error('Delete user error:', err);
+                setError('Network error. Please try again.');
                 fetchUsers();
             }
-        } catch (err) {
-            console.error('Delete user error:', err);
-            setError('Network error. Please try again.');
-            // Rollback on error
-            fetchUsers();
-        }
+        });
+    };
+
+    const closeSecurityPopup = () => {
+        setShowSecurityPopup(false);
+        setSecurityAnswer('');
+        setSecurityError('');
+        setPendingAction(null);
     };
 
     if (loading) {
@@ -388,6 +455,49 @@ const ViewUsers = () => {
             {showSuccessPopup && (
                 <div className="success-popup">
                     <p>{successMessage}</p>
+                </div>
+            )}
+
+            {/* Security Verification Popup */}
+            {showSecurityPopup && (
+                <div className={`error-popup ${showSecurityPopup ? 'active' : ''}`}>
+                    <h3 style={{marginTop: 0, color: '#A01365'}}>Security Verification Required</h3>
+                    <p style={{color: '#333', fontSize: '1em'}}>What is the Most memorable moment?</p>
+                    <input
+                        type="text"
+                        value={securityAnswer}
+                        onChange={(e) => setSecurityAnswer(e.target.value)}
+                        placeholder="Enter your answer"
+                        style={{
+                            width: '100%',
+                            padding: '10px',
+                            marginBottom: '10px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '1em'
+                        }}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                                verifySecurityAnswer();
+                            }
+                        }}
+                    />
+                    {securityError && (
+                        <p style={{color: '#A01365', fontSize: '0.9em', marginBottom: '10px'}}>
+                            {securityError}
+                        </p>
+                    )}
+                    <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
+                        <button onClick={verifySecurityAnswer}>
+                            Verify
+                        </button>
+                        <button 
+                            onClick={closeSecurityPopup}
+                            style={{backgroundColor: '#6c757d'}}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

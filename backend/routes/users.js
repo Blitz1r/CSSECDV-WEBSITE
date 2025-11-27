@@ -7,7 +7,7 @@ const {
     getUserById,
     createUser,
     updateUserRole,
-    deleteUser
+    deleteUser,
 } = require('../controllers/userController');
 const router = express.Router();
 
@@ -37,3 +37,4 @@ router.put('/:id/role', requireRole('Administrator'), updateUserRole);
 // Example: DELETE /api/users/507f1f77bcf86cd799439011
 router.delete('/:id', requireRole('Administrator'), deleteUser);
 module.exports = router;
+

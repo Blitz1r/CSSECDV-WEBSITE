@@ -1,5 +1,5 @@
 const express = require('express');
-const { loginUser, resetPassword, logoutUser, sessionInfo, verifySecurityAnswer, getSecurityQuestion,requestSecurity,verifySecurityAnswerForgot } = require('../controllers/loginController');
+const { loginUser, resetPassword, logoutUser, sessionInfo, verifySecurityAnswer, getSecurityQuestion,requestSecurity,verifySecurityAnswerForgot,verifyUserAccess } = require('../controllers/loginController');
 const router = express.Router();
 
 // Login
@@ -23,5 +23,7 @@ router.get('/security-question', getSecurityQuestion);
 router.post('/request-security', requestSecurity);
 
 router.post('/verify-security-forgot', verifySecurityAnswerForgot);
+
+router.post('/verify-access', verifyUserAccess);
 
 module.exports = router;

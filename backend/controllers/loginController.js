@@ -195,7 +195,79 @@ const logoutUser = (req, res) => {
         return res.json({ success: true });
     });
 };
+const verifyUserAccess = async (req, res) => {
+    const { answer } = req.body;
+    
+    if (!answer) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Answer is required' 
+        });
+    }
 
+    try {
+        // Get the current logged-in user from session
+        const userEmail = req.session?.email;
+        const userId = req.session?.userId;
+
+        if (!userEmail || !userId) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Not authenticated' 
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
+
+        // Verify the security answer (case-insensitive comparison)
+        if (String(user.securityAnswer).trim().toLowerCase() !== String(answer).trim().toLowerCase()) {
+            await addLog({ 
+                eventType: 'auth_attempt', 
+                action: 'User management access denied: incorrect security answer', 
+                level: 'SECURITY', 
+                userEmail: user.email, 
+                userId: user._id.toString()
+            });
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Incorrect answer' 
+            });
+        }
+
+        // Success - log the access
+        await addLog({ 
+            eventType: 'auth_attempt', 
+            action: 'User management access granted', 
+            level: 'INFO', 
+            userEmail: user.email, 
+            userId: user._id.toString()
+        });
+
+        return res.json({ 
+            success: true, 
+            message: 'Access granted' 
+        });
+
+    } catch (error) {
+        console.error('Verify user access error:', error);
+        await addLog({ 
+            eventType: 'error', 
+            action: 'User access verification failed', 
+            level: 'ERROR', 
+            meta: { message: error.message } 
+        });
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error' 
+        });
+    }
+};
 // GET /api/login/session - return current authenticated session info
 const sessionInfo = (req, res) => {
     if (!req.session || !req.session.userId) {
@@ -334,5 +406,6 @@ module.exports = {
     verifySecurityAnswer,
     getSecurityQuestion,
     requestSecurity,
-    verifySecurityAnswerForgot
+    verifySecurityAnswerForgot,
+    verifyUserAccess
 };
