@@ -41,6 +41,7 @@ const removeCategory = async (req, res) => {
         const deletedCategory = await Category.findByIdAndDelete(id);
 
         if (!deletedCategory) {
+            await addLog({ eventType: 'validation_failure', action: 'Category deletion: category not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { categoryId: id } });
             return res.status(404).json({ message: 'Category not found' });
         }
 
