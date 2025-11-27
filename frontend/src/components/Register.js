@@ -83,7 +83,6 @@ function Register() {
                 <div className="login-form">
                     <h2>Register</h2>
                     <p>Create your account with credentials.</p>
-                    {error && <div className="error-message">{errorMessage}</div>}
                     {success && <div className="success-message">Account created! Redirecting to login...</div>}
                     <form onSubmit={HandleSubmit}>
                         <input
@@ -120,6 +119,12 @@ function Register() {
                     </form>
                 </div>
             </div>
+            {error && (
+                <div className="error-popup active">
+                    <p>{errorMessage}</p>
+                    <button onClick={() => setError(false)}>Close</button>
+                </div>
+            )}
         </div>
     );
 }
