@@ -86,6 +86,7 @@ const updateItem = async (req, res) => {
     try {
         const item = await Item.findById(id);
         if (!item) {
+            await addLog({ eventType: 'validation_failure', action: 'Item update: item not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { itemId: id } });
             return res.status(404).json({ message: 'Item not found' });
         }
 
@@ -120,6 +121,7 @@ const deleteItem = async (req, res) => {
     try {
         const item = await Item.findById(id);
         if (!item) {
+            await addLog({ eventType: 'validation_failure', action: 'Item deletion: item not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { itemId: id } });
             return res.status(404).json({ message: 'Item not found' });
         }
 
@@ -152,6 +154,7 @@ const incrementItem = async (req, res) => {
     try {
         const item = await Item.findById(id);
         if (!item) {
+            await addLog({ eventType: 'validation_failure', action: 'Item increment: item not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { itemId: id } });
             return res.status(404).json({ message: 'Item not found' });
         }
 
@@ -201,6 +204,7 @@ const decrementItem = async (req, res) => {
     try {
         const item = await Item.findById(id);
         if (!item) {
+            await addLog({ eventType: 'validation_failure', action: 'Item decrement: item not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { itemId: id } });
             return res.status(404).json({ message: 'Item not found' });
         }
 

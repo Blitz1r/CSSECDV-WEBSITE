@@ -35,6 +35,7 @@ function consumeSecurityToken(token) {
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
+        await addLog({ eventType: 'validation_failure', action: 'Login: missing email or password', level: 'WARN', meta: { hasEmail: !!email, hasPassword: !!password } });
         return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
     try {
@@ -131,6 +132,7 @@ const loginUser = async (req, res) => {
 const resetPassword = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
+        await addLog({ eventType: 'validation_failure', action: 'Password reset: missing email or password', level: 'WARN', meta: { hasEmail: !!email, hasPassword: !!password } });
         return res.status(400).json({ message: 'Email and password are required' });
     }
     try {
@@ -147,6 +149,7 @@ const resetPassword = async (req, res) => {
         // Enforce minimum password age
         if (!user.canChangePassword()) {
             const minutesLeft = user.passwordAgeRemainingMinutes();
+            await addLog({ eventType: 'validation_failure', action: 'Password reset: password too recent', level: 'WARN', userEmail: user.email, userId: user._id.toString(), meta: { minutesRemaining: minutesLeft } });
             return res.status(400).json({ message: `Password was changed too recently. Try again in ${minutesLeft} minute(s).` });
         }
         // Prevent password reuse against current and history

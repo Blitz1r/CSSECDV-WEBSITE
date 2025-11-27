@@ -140,6 +140,7 @@ const getUserById = async (req, res) => {
             .select('-password -passwordHistory -securityAnswer');
 
         if (!user) {
+            await addLog({ eventType: 'validation_failure', action: 'Get user by ID: user not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { queriedId: id } });
             return res.status(404).json({ 
                 success: false, 
                 message: 'User not found' 
@@ -264,14 +265,23 @@ const createUser = async (req, res) => {
 };
 const createPublicUser = async (req, res) => {
     try {
-        const { email, password, securityAnswer } = req.body;
+        const { email, password, confirmPassword, securityAnswer } = req.body;
 
         // Validate required fields
-        if (!email || !password || !securityAnswer) {
-            await addLog({ eventType: 'validation_failure', action: 'Public user registration: missing required fields', level: 'WARN', meta: { hasEmail: !!email, hasPassword: !!password, hasSecurityAnswer: !!securityAnswer } });
+        if (!email || !password || !confirmPassword || !securityAnswer) {
+            await addLog({ eventType: 'validation_failure', action: 'Public user registration: missing required fields', level: 'WARN', meta: { hasEmail: !!email, hasPassword: !!password, hasConfirmPassword: !!confirmPassword, hasSecurityAnswer: !!securityAnswer } });
             return res.status(400).json({ 
                 success: false, 
-                message: 'All fields are required: email, password, securityAnswer' 
+                message: 'All fields are required: email, password, confirmPassword, securityAnswer' 
+            });
+        }
+
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            await addLog({ eventType: 'validation_failure', action: 'Public user registration: passwords do not match', level: 'WARN', meta: { email } });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Passwords do not match' 
             });
         }
 
@@ -358,6 +368,7 @@ const updateUserRole = async (req, res) => {
 
         const user = await User.findById(id);
         if (!user) {
+            await addLog({ eventType: 'validation_failure', action: 'Update user role: user not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { targetId: id } });
             return res.status(404).json({ 
                 success: false, 
                 message: 'User not found' 
@@ -408,6 +419,7 @@ const deleteUser = async (req, res) => {
 
         const user = await User.findById(id);
         if (!user) {
+            await addLog({ eventType: 'validation_failure', action: 'Delete user: user not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { targetId: id } });
             return res.status(404).json({ 
                 success: false, 
                 message: 'User not found' 
@@ -416,6 +428,7 @@ const deleteUser = async (req, res) => {
 
         // Prevent deleting self
         if (req.session.userId === id) {
+            await addLog({ eventType: 'validation_failure', action: 'Delete user: attempted self-deletion', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId });
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot delete your own account' 

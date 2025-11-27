@@ -22,21 +22,6 @@ function Register() {
         setSuccess(false);
         setErrorMessage('');
 
-        // Validation
-        if (!email || !password || !confirmPassword || !securityAnswer) {
-            setError(true);
-            setErrorMessage('All fields are required');
-            setLoading(false);
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setError(true);
-            setErrorMessage('Passwords do not match');
-            setLoading(false);
-            return;
-        }
-
         try {
             const response = await fetch(`${config.API_URL}/api/publicusers`, {
                 method: 'POST',
@@ -46,6 +31,7 @@ function Register() {
                 body: JSON.stringify({
                     email,
                     password,
+                    confirmPassword,
                     securityAnswer,
                 }),
             });

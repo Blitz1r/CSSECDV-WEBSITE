@@ -48,6 +48,7 @@ const updateOrder = async (req, res) => {
     try {
         const order = await Order.findById(id);
         if (!order) {
+            await addLog({ eventType: 'validation_failure', action: 'Order update: order not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { orderId: id } });
             return res.status(404).json({ message: 'Order not found' });
         }
         if (!enforceAction(req, res, 'Order', 'update', order.owner)) return;
@@ -70,6 +71,7 @@ const deleteOrder = async (req, res) => {
     try {
         const order = await Order.findById(id);
         if (!order) {
+            await addLog({ eventType: 'validation_failure', action: 'Order deletion: order not found', level: 'WARN', userEmail: req.session?.email, userId: req.session?.userId, meta: { orderId: id } });
             return res.status(404).json({ message: 'Order not found' });
         }
 
