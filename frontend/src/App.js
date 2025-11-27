@@ -18,6 +18,7 @@ import VerifySecurityQuestion from './components/VerifySecurityQuestion';
 import VerifySecurityQuestionForgot from './components/VerifySecurityQuestionforgot';
 import ViewUsers from './components/ViewUsers';
 import ResetPassword from './components/ResetPassword';
+import PasswordChange from './components/passwordchange';
 function App() {
     useEffect(() => {
         const darkMode = localStorage.getItem('darkMode');
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/orders/pending" element={<ProtectedRoute><PendingOrders /></ProtectedRoute>} />
                     <Route path="/reports/sales" element={<ProtectedRoute><SalesReports /></ProtectedRoute>} />
                     <Route path="/reports/inventory" element={<ProtectedRoute><InventoryReports /></ProtectedRoute>} />
+                    <Route path="/password-change" element={<ProtectedRoute><PasswordChange /></ProtectedRoute>} />
                     <Route path="/logs" element={<ProtectedRoute roles={['Administrator']}><ViewLogs /></ProtectedRoute>} />
                     <Route path="/users" element={<ProtectedRoute roles={['Administrator']}><ViewUsers /></ProtectedRoute>} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -111,6 +111,12 @@ const Sidebar = () => {
                         <span className="text">Settings</span>
                     </Link>
                 </li>
+                <li>
+                    <Link to="/password-change" title="passwordchange">
+                        <span className="icon">🔒</span>
+                        <span className="text">Settings</span>
+                    </Link>
+                </li>
                 {role === 'Administrator' && (
                 <li>
                     <Link to="/logs" title="System Logs">
